@@ -1,5 +1,5 @@
+import sys
 import os
-import importlib.util
 import pickle
 
 from .helpers import *
@@ -9,6 +9,21 @@ def mkdir(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
+def load_module(name, path_to_file):
+    if sys.version_info < (3, 0):
+        import imp
+        return imp.load_source(name, path_to_file)
+    if sys.version_info < (3, 5):
+        from importlib.machinery import SourceFileLoader
+        return SourceFileLoader(name, path_to_file).load_module()
+    else:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(name, path_to_file)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+
 def get_producer_infos(producers_path):
     producer_infos = {}
 
@@ -16,9 +31,7 @@ def get_producer_infos(producers_path):
         if file_name == '__init__.py' or file_name[-3:] != '.py':
             continue
         name = file_name[:-3]
-        spec = importlib.util.spec_from_file_location("module.name", os.path.join(producers_path,file_name))
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+        module = load_module(name, os.path.join(producers_path,file_name))
         if name in dir(module):
             Producer = getattr(module, name)
             file_path = os.path.join(producers_path, file_name)

@@ -1,3 +1,4 @@
-from .utils import *
-from .core import *
-from .plotting import *
+__all__ = ['plotting', 'core', 'utils']
+import plotting
+import core
+import utils
