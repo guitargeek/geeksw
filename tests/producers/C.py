@@ -1,10 +1,10 @@
-from geeksw.core import Plot
-import matplotlib.pyplot as plt
 import numpy as np
+
+from geeksw.core import Plot
 
 class C:
 
-    outputs  = ["win", "plot", "other_plot"]
+    outputs  = ["win/win"]
     requires = ["foo", "jenkins"]
 
     def __init__(self):
@@ -12,19 +12,7 @@ class C:
 
     def run(self, record): 
 
-        record["win"] = "Win"+record["foo"].title()+record["jenkins"].title()
+        record.put("win/win", "Win"+record.get("foo").title()+record.get("jenkins").title())
 
         x = np.linspace(0, 5, 200)
         y = np.sin(x)
-
-        record["plot"] = Plot()
-        plt.plot(x, y)
-        plt.xlabel("x")
-        plt.ylabel("y")
-        record["plot"].commit()
-
-        record["other_plot"] = Plot()
-        plt.plot(y, x)
-        plt.xlabel("y")
-        plt.ylabel("x")
-        record["other_plot"].commit()
