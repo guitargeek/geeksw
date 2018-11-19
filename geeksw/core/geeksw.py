@@ -41,8 +41,9 @@ def get_producer_infos(producers_path):
                     "outputs"   : [],
                     "hash"      : hash_file(file_path),
                     "class"     : Producer,
+                    "cache"     : True,
                     }
-            for attr in ["produces", "requires", "outputs"]:
+            for attr in ["produces", "requires", "outputs", "cache"]:
                 if hasattr(Producer, attr):
                     producer_infos[name][attr] = getattr(Producer, attr)
     del file_name
@@ -62,7 +63,10 @@ def get_all_requirements(producer_list, producer_infos):
 def save(obj, name, path):
 
     # How to save matplotlib plots
-    if type(obj) == Plot:
+    print(name)
+    if type(obj) == Plot and name.startswith("plots/"):
+        print(name)
+        name = name[6:]
         return obj.save(path, name)
 
     # If there is no special rule, just pickle
@@ -95,9 +99,10 @@ def geek_run(producers_path):
         producer = Producer()
         producer.run(record)
 
-        for p in producer_infos[name]["produces"]:
-            size = save(record[p], p, cache_dir)
-            print("Caching product {0}: {1}".format(p, humanbytes(size)))
+        if producer_infos[name]["cache"]:
+            for p in producer_infos[name]["produces"]:
+                size = save(record[p], p, cache_dir)
+                print("Caching product {0}: {1}".format(p, humanbytes(size)))
 
         for p in producer_infos[name]["outputs"]:
             size = save(record[p], p, out_dir)

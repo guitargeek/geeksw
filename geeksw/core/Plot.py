@@ -6,7 +6,7 @@ def mkdir(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
-class Plot():
+class Plot(object):
     def __init__(self, **kwargs):
         self.figure_handle = plt.figure(**kwargs)
 

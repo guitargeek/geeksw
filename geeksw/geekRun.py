@@ -1,4 +1,4 @@
-from geeksw.core import *
+from .core import geek_run
 
 def __main__():
     import argparse
@@ -8,5 +8,3 @@ def __main__():
     args = parser.parse_args()
 
     record = geek_run(args.producers_path)
-
-__main__()
