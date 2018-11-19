@@ -3,7 +3,7 @@ import os
 import pickle
 
 from .helpers import *
-import geeksw.plotting
+from .Plot import Plot
 
 def mkdir(path):
     if not os.path.exists(path):
@@ -62,7 +62,7 @@ def get_all_requirements(producer_list, producer_infos):
 def save(obj, name, path):
 
     # How to save matplotlib plots
-    if type(obj) == geeksw.plotting.wrapper.Plot:
+    if type(obj) == Plot:
         return obj.save(path, name)
 
     # If there is no special rule, just pickle

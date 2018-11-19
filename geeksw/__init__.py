@@ -1,4 +1,2 @@
-__all__ = ['plotting', 'core', 'utils']
-import plotting
-import core
-import utils
+from .core import *
+from .utils import *
