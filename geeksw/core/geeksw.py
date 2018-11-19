@@ -22,7 +22,6 @@ def get_producer_infos(producers_path):
                     "hash" : hash_file(file_path),
                     "class" : Producer,
                     }
-            print(producer_infos[name])
     del file_name
 
     return producer_infos
@@ -47,7 +46,6 @@ def geek_run(producers_path):
         Producer = producer_infos[name]["class"]
         producer = Producer()
         producer.run(record)
-        print(record)
         requirements = get_all_requirements(exec_order[i_producer+1:], producer_infos)
         keys = list(record)
         for key in keys:
