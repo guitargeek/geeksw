@@ -5,7 +5,7 @@ from geeksw.core import Plot
 
 class C:
 
-    outputs  = ["win", "plot", "other_plot"]
+    produces = ["win", "plot", "other_plot"]
     requires = ["foo", "jenkins"]
 
     def __init__(self):

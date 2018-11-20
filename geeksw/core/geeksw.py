@@ -39,12 +39,11 @@ def get_producer_infos(producers_path):
             producer_infos[name] = {
                     "produces"  : [],
                     "requires"  : [],
-                    "outputs"   : [],
                     "hash"      : hash_file(file_path),
                     "class"     : Producer,
                     "cache"     : True,
                     }
-            for attr in ["produces", "requires", "outputs", "cache"]:
+            for attr in ["produces", "requires", "cache"]:
                 if hasattr(Producer, attr):
                     producer_infos[name][attr] = getattr(Producer, attr)
     del file_name
@@ -74,7 +73,39 @@ def save(obj, name, path):
         pickle.dump(obj, f)
     return os.path.getsize(file_name)
 
-def geek_run(producers_path):
+def geek_run(config):
+
+    try:
+        # Try to open the file to see if it's a valid file path
+        with open(config, 'r') as f:
+            pass
+    except:
+        # If the passed config was not a file, maybe if was a string that is
+        # supposed to be the content of the config...
+        import tempfile
+        import subprocess
+
+        new_file, filename = tempfile.mkstemp()
+
+        os.write(new_file, str.encode(config))
+        os.close(new_file)
+
+        subprocess.call(["mv", filename, filename + ".py"])
+
+        config = filename + ".py"
+
+    out_dir   = "output"
+    cache_dir = "cache"
+
+    print(config)
+
+    config = load_module("config", config)
+
+    producers_path = config.producers
+    target_products = config.products
+
+    if hasattr(config, "cache_dir"): out_dir = config.cache_dir
+    if hasattr(config, "out_dir")  : out_dir = config.out_dir
 
     record = Record()
 
@@ -82,8 +113,6 @@ def geek_run(producers_path):
     exec_order = get_exec_order(producer_infos)
 
     # Set up the cache where products will be stored
-    cache_dir = "cache"
-    out_dir = "out"
 
     for i_producer, name in enumerate(exec_order):
 
@@ -98,9 +127,10 @@ def geek_run(producers_path):
                 size = save(record.get(p), p, cache_dir)
                 print("Caching product {0}: {1}".format(p, humanbytes(size)))
 
-        for p in producer_infos[name]["outputs"]:
-            size = save(record.get(p), p, out_dir)
-            print("Saving output {0}: {1}".format(p, humanbytes(size)))
+        for p in producer_infos[name]["produces"]:
+            if p in target_products:
+                size = save(record.get(p), p, out_dir)
+                print("Saving output {0}: {1}".format(p, humanbytes(size)))
 
         requirements = get_all_requirements(exec_order[i_producer+1:], producer_infos)
         keys = record.to_list()

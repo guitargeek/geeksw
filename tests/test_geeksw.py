@@ -6,7 +6,14 @@ class GeekswTests(unittest.TestCase):
 
     def test_geek_run(self):
         test_dir = os.path.dirname(__file__)
-        record = geek_run(os.path.join(test_dir, "producers"))
+
+        # We give the config file as a string to keep the test more compact
+        record = geek_run("""
+producers = "producers"
+products  = ["win/win",]
+out_dir   = "test_geeksw_output"
+""")
+
         self.assertTrue(record._dict == dict())
 
 if __name__ == '__main__':

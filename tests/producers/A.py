@@ -1,8 +1,8 @@
 from geeksw.core import Plot
 
-class C:
+class A:
 
-    produces = ["win/win"]
+    produces = ["lin"]
     requires = ["foo", "jenkins"]
 
     def __init__(self):
@@ -10,4 +10,4 @@ class C:
 
     def run(self, record): 
 
-        record.put("win/win", "Win"+record.get("foo").title()+record.get("jenkins").title())
+        record.put("lin", "Lin"+record.get("foo").title()+record.get("jenkins").title())

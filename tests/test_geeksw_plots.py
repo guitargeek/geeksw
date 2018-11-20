@@ -6,7 +6,11 @@ class GeekswPlotsTests(unittest.TestCase):
 
     def test_geek_run_plots(self):
         test_dir = os.path.dirname(__file__)
-        record = geek_run(os.path.join(test_dir, "producers_with_plots"))
+        record = geek_run("""
+producers = "producers_with_plots"
+products  = ["win/win","plot","other_plot"]
+out_dir   = "test_geeksw_with_plots_output"
+""")
         self.assertTrue(record._dict == dict())
 
 if __name__ == '__main__':
