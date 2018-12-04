@@ -3,6 +3,7 @@ import os
 import pickle
 
 from .helpers import *
+from .DependencyGraph import DependencyGraph
 from .Plot import Plot
 from .Record import Record
 
@@ -50,9 +51,9 @@ def get_producer_infos(producers_path):
 
     return producer_infos
 
-def get_exec_order(producer_infos):
-    graph = get_dependency_graph(producer_infos)
-    return kahn_topsort(graph)
+def get_exec_order(producer_infos, target_products):
+    graph = DependencyGraph(producer_infos, target_products)
+    return graph.toposort()
 
 def get_all_requirements(producer_list, producer_infos):
     requirements = []
@@ -97,8 +98,6 @@ def geek_run(config):
     out_dir   = "output"
     cache_dir = "cache"
 
-    print(config)
-
     config = load_module("config", config)
 
     producers_path = config.producers
@@ -110,7 +109,8 @@ def geek_run(config):
     record = Record()
 
     producer_infos = get_producer_infos(producers_path)
-    exec_order = get_exec_order(producer_infos)
+
+    exec_order = get_exec_order(producer_infos, target_products)
 
     # Set up the cache where products will be stored
 
