@@ -1,11 +1,13 @@
 import sys
 import os
 import pickle
+import inspect
 
 from .helpers import *
 from .DependencyGraph import DependencyGraph
 from .Plot import Plot
 from .Record import Record
+from .Producers import SingleDatasetProducer
 
 def mkdir(path):
     if not os.path.exists(path):
@@ -34,10 +36,12 @@ def get_producer_infos(producers_path):
             continue
         name = file_name[:-3]
         module = load_module(name, os.path.join(producers_path,file_name))
-        if name in dir(module):
-            Producer = getattr(module, name)
+        for item in dir(module):
+            Producer = getattr(module, item)
+            if not inspect.isclass(Producer) or not issubclass(Producer, SingleDatasetProducer):
+                continue
             file_path = os.path.join(producers_path, file_name)
-            producer_infos[name] = {
+            producer_infos[item] = {
                     "produces"  : [],
                     "requires"  : [],
                     "hash"      : hash_file(file_path),
@@ -46,7 +50,7 @@ def get_producer_infos(producers_path):
                     }
             for attr in ["produces", "requires", "cache"]:
                 if hasattr(Producer, attr):
-                    producer_infos[name][attr] = getattr(Producer, attr)
+                    producer_infos[item][attr] = getattr(Producer, attr)
     del file_name
 
     return producer_infos
@@ -95,47 +99,56 @@ def geek_run(config):
 
         config = filename + ".py"
 
-    out_dir   = "output"
-    cache_dir = "cache"
-
     config = load_module("config", config)
 
     producers_path = config.producers
     target_products = config.products
 
-    if hasattr(config, "cache_dir"): out_dir = config.cache_dir
-    if hasattr(config, "out_dir")  : out_dir = config.out_dir
+    out_dir_base = "output"
+    cache_dir_base = "cache"
 
-    record = Record()
+    if hasattr(config, "cache_dir"): out_dir_base = config.cache_dir
+    if hasattr(config, "out_dir")  : out_dir_base = config.out_dir
 
     producer_infos = get_producer_infos(producers_path)
 
     exec_order = get_exec_order(producer_infos, target_products)
 
-    # Set up the cache where products will be stored
+    records = {}
 
-    for i_producer, name in enumerate(exec_order):
+    # Loop over all datasets
+    for  dataset in config.datasets:
+        print("Processing dataset "+dataset[1]+"...")
 
-        print("Executing module "+name+"...")
+        record = Record()
+        out_dir   = os.path.join(out_dir_base, dataset[1])
+        cache_dir = os.path.join(cache_dir_base, dataset[1])
 
-        Producer = producer_infos[name]["class"]
-        producer = Producer()
-        producer.run(record)
+        # Loop over producers needed to get to the desired output products
+        for i_producer, name in enumerate(exec_order):
 
-        if producer_infos[name]["cache"]:
+            print("Executing module "+name+"...")
+
+            Producer = producer_infos[name]["class"]
+            producer = Producer()
+            producer.run(dataset, record)
+
+            if producer_infos[name]["cache"]:
+                for p in producer_infos[name]["produces"]:
+                    size = save(record.get(p), p, cache_dir)
+                    print("Caching product {0}: {1}".format(p, humanbytes(size)))
+
             for p in producer_infos[name]["produces"]:
-                size = save(record.get(p), p, cache_dir)
-                print("Caching product {0}: {1}".format(p, humanbytes(size)))
+                if p in target_products:
+                    size = save(record.get(p), p, out_dir)
+                    print("Saving output {0}: {1}".format(p, humanbytes(size)))
 
-        for p in producer_infos[name]["produces"]:
-            if p in target_products:
-                size = save(record.get(p), p, out_dir)
-                print("Saving output {0}: {1}".format(p, humanbytes(size)))
+            requirements = get_all_requirements(exec_order[i_producer+1:], producer_infos)
+            keys = record.to_list()
+            for key in keys:
+                if key not in requirements:
+                    record.delete(key)
 
-        requirements = get_all_requirements(exec_order[i_producer+1:], producer_infos)
-        keys = record.to_list()
-        for key in keys:
-            if key not in requirements:
-                record.delete(key)
+        records[dataset[1]] = record
 
-    return record
+    return records

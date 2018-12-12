@@ -7,4 +7,4 @@ def __main__():
     parser.add_argument('config_file', help="configuration file")
     args = parser.parse_args()
 
-    record = geek_run(args.producers_path)
+    record = geek_run(args.config_file)
