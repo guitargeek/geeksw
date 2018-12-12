@@ -6,7 +6,7 @@ import inspect
 from .helpers import *
 from .DependencyGraph import DependencyGraph
 from .Plot import Plot
-from .Record import Record
+from .Record import Record, FullRecord, Dataset
 from .Producers import SingleDatasetProducer
 
 def mkdir(path):
@@ -114,15 +114,19 @@ def geek_run(config):
 
     exec_order = get_exec_order(producer_infos, target_products)
 
-    records = {}
+    # Create list of dataset instances from configuration tuples
+    datasets = [Dataset(*args) for args in config.datasets]
+
+    full_record = FullRecord(datasets)
 
     # Loop over all datasets
-    for  dataset in config.datasets:
-        print("Processing dataset "+dataset[1]+"...")
+    for  dataset in datasets:
+        print("Processing dataset "+dataset.file_path+"...")
 
-        record = Record()
-        out_dir   = os.path.join(out_dir_base, dataset[1])
-        cache_dir = os.path.join(cache_dir_base, dataset[1])
+        out_dir   = os.path.join(out_dir_base, dataset.geeksw_path)
+        cache_dir = os.path.join(cache_dir_base, dataset.geeksw_path)
+
+        record = full_record.get(dataset)
 
         # Loop over producers needed to get to the desired output products
         for i_producer, name in enumerate(exec_order):
@@ -149,6 +153,4 @@ def geek_run(config):
                 if key not in requirements:
                     record.delete(key)
 
-        records[dataset[1]] = record
-
-    return records
+    return full_record

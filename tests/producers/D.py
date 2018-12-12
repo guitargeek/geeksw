@@ -1,4 +1,6 @@
-class D:
+from geeksw.core import SingleDatasetProducer
+
+class D(SingleDatasetProducer):
 
     produces = ["foo", "bar"]
     requires = []
@@ -6,6 +8,6 @@ class D:
     def __init__(self):
         pass
 
-    def run(self, record): 
+    def run(self, dataset, record): 
         record.put("foo", "foo")
         record.put("bar", "bar")

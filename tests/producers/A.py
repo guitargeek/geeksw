@@ -1,6 +1,6 @@
-from geeksw.core import Plot
+from geeksw.core import SingleDatasetProducer
 
-class A:
+class A(SingleDatasetProducer):
 
     produces = ["lin"]
     requires = ["foo", "jenkins"]

@@ -9,12 +9,17 @@ class GeekswTests(unittest.TestCase):
 
         # We give the config file as a string to keep the test more compact
         records = geek_run("""
+datasets = [
+            ("datasets/data1", "data1"),
+            ("datasets/data2", "data2"),
+            ("datasets/data3", "data3"),
+           ]
 producers = "producers"
 products  = ["win/win",]
 out_dir   = "test_geeksw_output"
 """)
 
-        for dataset, record in records.items():
+        for dataset, record in records.get("**").items():
             self.assertTrue(record._dict == dict())
 
 if __name__ == '__main__':
