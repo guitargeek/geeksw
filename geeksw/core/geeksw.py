@@ -2,6 +2,7 @@ import sys
 import os
 import pickle
 import inspect
+import glob
 
 from .helpers import *
 from .DependencyGraph import DependencyGraph
@@ -12,6 +13,17 @@ from .Producers import Producer as GeekProducer
 def mkdir(path):
     if not os.path.exists(path):
         os.makedirs(path)
+
+def path_product(p1, p2):
+    return [os.path.join(*x) for x in itertools.product(p1, p2)]
+
+def expand_wildcard(product, out_dir):
+    if not "*" in product:
+        return product
+    i = product[::-1].find("*")
+    wildcard_expr = os.path.join(out_dir, "."+product[:-i]).replace("/./", "/")
+    rest = product[-i:]
+    return [path[len(out_dir):] + rest for path in glob.glob(wildcard_expr)]
 
 def load_module(name, path_to_file):
     if sys.version_info < (3, 0):
@@ -79,7 +91,7 @@ class ProductMatch(object):
     def __init__(self, product, producer):
 
         regex = re.sub('<[^<>]*>', '[^/]*', producer.product)
-        match = re.match(regex+"$", product)
+        match = re.match(".*"+regex+"$", product)
 
         if match is None:
             self.group = None
@@ -87,8 +99,10 @@ class ProductMatch(object):
             self.score = 0
             return
 
+        depth = producer.product.count("/")
+
         # The matching pattern
-        self.group = match.group()
+        self.group = "/".join(match.group().split("/")[-depth-1:])
         # The "matching depth". Products which match deeper are resolving ambiguities.
         self.score = self.group.count("/") + 1
 
@@ -108,9 +122,12 @@ def get_required_producers(product, Producers):
     scores = [m.score - len(m.subs)/100. for m in matches]
     if max(scores) == 0: return []
     i = np.argmax(scores)
-    producers = [Producers[i](matches[i].subs)]
+
+    working_dir = product[:-len(matches[i].group)]
+
+    producers = [Producers[i](matches[i].subs, working_dir)]
     for req in producers[0].requires:
-        producers += get_required_producers(req, Producers)
+        producers += get_required_producers(os.path.join(working_dir, req), Producers)
     return producers
 
 def geek_run(config):
@@ -139,36 +156,44 @@ def geek_run(config):
     producers_path = config.producers
     target_products = config.products
 
-    out_dir_base = "output"
-    cache_dir_base = "cache"
+    out_dir = "output"
+    cache_dir = "cache"
 
-    if hasattr(config, "cache_dir"): out_dir_base = config.cache_dir
-    if hasattr(config, "out_dir")  : out_dir_base = config.out_dir
+    if hasattr(config, "cache_dir"): out_dir = config.cache_dir
+    if hasattr(config, "out_dir")  : out_dir = config.out_dir
+
+    # Create list of dataset instances from configuration tuples
+    datasets = [Dataset(*args) for args in config.datasets]
+
+    # Create the output dir structure
+    for ds in datasets: mkdir(os.path.join(out_dir, "."+ds.geeksw_path))
+
+    expanded_target_products = []
+    for t in target_products:
+        expanded_target_products += expand_wildcard(t, out_dir)
+    target_products = [x[1:] for x in expanded_target_products]
 
     Producers = get_producer_classes(producers_path)
     producers = []
+
+    print([ds.geeksw_path for ds in datasets])
+    print(target_products)
 
     for t in target_products: producers += get_required_producers(t, Producers)
     producers = list(set(producers))
 
     print("Producers:")
     for i, producer in enumerate(producers):
-        print("[{0}]".format(i), *producer.requires, "->", producer.product)
+        print("[{0}]".format(i), *producer.requires, "->", producer.product, "     working in ", producer.working_dir)
 
 
     exec_order = get_exec_order(producers)
-
-    # Create list of dataset instances from configuration tuples
-    datasets = [Dataset(*args) for args in config.datasets]
 
     full_record = FullRecord(datasets)
 
     # Loop over all datasets
     for  dataset in datasets:
         print("Processing dataset "+dataset.file_path+"...")
-
-        out_dir   = os.path.join(out_dir_base, dataset.geeksw_path)
-        cache_dir = os.path.join(cache_dir_base, dataset.geeksw_path)
 
         record = full_record.get(dataset)
 
@@ -180,13 +205,17 @@ def geek_run(config):
             product = producers[ip].run(record._dict)
             pname = producers[ip].product
             record._dict[pname] = product
+            working_dir = producers[ip].working_dir
+            print(working_dir)
 
             if producers[ip].cache:
-                size = save(product, pname, cache_dir)
+                
+                print(os.path.join(cache_dir, working_dir))
+                size = save(product, pname, os.path.join(cache_dir, working_dir))
                 print("Caching product {0}: {1}".format(pname, humanbytes(size)))
 
-            if pname in target_products:
-                size = save(product, pname, out_dir)
+            if os.path.join(working_dir, pname) in target_products:
+                size = save(product, pname, os.path.join(out_dir, working_dir))
                 print("Saving output {0}: {1}".format(pname, humanbytes(size)))
 
             requirements = get_all_requirements(exec_order[i+1:], producers)

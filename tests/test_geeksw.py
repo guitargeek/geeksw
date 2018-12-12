@@ -10,12 +10,12 @@ class GeekswTests(unittest.TestCase):
         # We give the config file as a string to keep the test more compact
         records = geek_run("""
 datasets = [
-            ("datasets/data1", "data1"),
-            ("datasets/data2", "data2"),
-            ("datasets/data3", "data3"),
+            ("datasets/data1", "/data1"),
+            ("datasets/data2", "/data2"),
+            ("datasets/data3", "/data3"),
            ]
 producers = "producers"
-products  = ["win/win",]
+products  = ["/*/win/win",]
 out_dir   = "test_geeksw_output"
 """)
 
