@@ -12,17 +12,30 @@ class Producer(object):
         self.product = replace_from_dict(self.product, subs)
         self.requires = [replace_from_dict(req, subs) for req in self.requires]
 
+    def __eq__(self, other):
+        """ Check if producer has same template specialization.
+        """
+        if type(self) != type(other):
+            return False
+        return self.product == other.product
+
+    def __hash__(self):
+        """ Should be some collision free hash function to spot duplicate producers.
+            Used in set().
+        """
+        return abs(id(self) + hash(self.product))
+
 class Generator(Producer):
 
-    product = "data/<distribution>"
+    product = "<distribution>"
     requires = []
 
     def run(self, inputs):
-        if self.product == "uniform":
+        if self.product == "data/uniform":
             return np.random.uniform(0,1,1000)
-        if self.product == "normal":
+        if self.product == "data/normal":
             return np.random.normal(size=1000)
-        if self.product == "exponential":
+        if self.product == "data/exponential":
             return np.random.uniform(scale=1.0, size=1000)
         else:
             return np.zeros(10)
@@ -36,9 +49,9 @@ class Plotter(Producer):
 
     def run(self, inputs):
         plt.figure()
-        plt.plot(inputs["uniform"])
-        plt.plot(inputs["normal"])
-        plt.plot(inputs["exponential"])
+        plt.plot(inputs["data/uniform"])
+        plt.plot(inputs["data/normal"])
+        plt.plot(inputs["data/exponential"])
         plt.show()
 
 import re
@@ -52,7 +65,7 @@ class ProductMatch(object):
 
         if match is None:
             self.group = None
-            self.subs  = None
+            self.subs  = {}
             self.score = 0
             return
 
@@ -67,26 +80,35 @@ class ProductMatch(object):
             if t != s:
                 self.subs[t] = s
 
-producers = [
+Producers = [
              Generator,
              Plotter,
             ]
 
-b = "plot"
+targets = ["plot"]
 
-# def get_required_producer(product, producers):
-score = 0
-match = None
-producer = None
-for p in producers:
-    new_match = ProductMatch(b, p)
-    if new_match.score > score:
-        match = new_match
-        score = match.score
-        producer = p(match.subs)
+def get_required_producer(product, Producers):
+    n = len(Producers)
+    matches = list(map(lambda P : ProductMatch(product, P), Producers))
+    # Penalize matching depth score with number of template specializations
+    # to give priority to full specializations.
+    scores = [m.score - len(m.subs)/100. for m in matches]
+    if max(scores) == 0: return []
+    i = np.argmax(scores)
+    producers = [Producers[i](matches[i].subs)]
+    for req in producers[0].requires:
+        producers += get_required_producer(req, Producers)
+    return producers
 
+producers = []
 
+for t in targets: producers += get_required_producer(t, Producers)
+producers = set(producers)
 
-print(match)
-record = {}
-producer.run(record)
+for producer in producers:
+    for req in producer.requires:
+        print(req, producer.product)
+
+# print(match)
+# record = {}
+# producer.run(record)
