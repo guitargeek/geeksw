@@ -1,13 +1,9 @@
-from geeksw.core import SingleDatasetProducer
+from geeksw.core import Producer
 
-class D(SingleDatasetProducer):
+class D(Producer):
 
-    produces = ["foo", "bar"]
+    product = "foo"
     requires = []
 
-    def __init__(self):
-        pass
-
-    def run(self, dataset, record): 
-        record.put("foo", "foo")
-        record.put("bar", "bar")
+    def run(self, inputs):
+        return "foo"

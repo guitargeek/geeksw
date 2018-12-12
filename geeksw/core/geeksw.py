@@ -7,7 +7,7 @@ from .helpers import *
 from .DependencyGraph import DependencyGraph
 from .Plot import Plot
 from .Record import Record, FullRecord, Dataset
-from .Producers import SingleDatasetProducer
+from .Producers import Producer as GeekProducer
 
 def mkdir(path):
     if not os.path.exists(path):
@@ -28,8 +28,9 @@ def load_module(name, path_to_file):
         return module
 
 
-def get_producer_infos(producers_path):
-    producer_infos = {}
+def get_producer_classes(producers_path):
+    Producers = []
+    hashes = [] # file hashes to track changes
 
     for file_name in os.listdir(producers_path):
         if file_name == '__init__.py' or file_name[-3:] != '.py':
@@ -38,31 +39,24 @@ def get_producer_infos(producers_path):
         module = load_module(name, os.path.join(producers_path,file_name))
         for item in dir(module):
             Producer = getattr(module, item)
-            if not inspect.isclass(Producer) or not issubclass(Producer, SingleDatasetProducer):
+            if not inspect.isclass(Producer) or not GeekProducer in Producer.__bases__:
                 continue
             file_path = os.path.join(producers_path, file_name)
-            producer_infos[item] = {
-                    "produces"  : [],
-                    "requires"  : [],
-                    "hash"      : hash_file(file_path),
-                    "class"     : Producer,
-                    "cache"     : True,
-                    }
-            for attr in ["produces", "requires", "cache"]:
-                if hasattr(Producer, attr):
-                    producer_infos[item][attr] = getattr(Producer, attr)
+            Producers.append(Producer)
+            hashes += hash_file(file_path)
     del file_name
 
-    return producer_infos
+    return Producers
 
-def get_exec_order(producer_infos, target_products):
-    graph = DependencyGraph(producer_infos, target_products)
+def get_exec_order(producers):
+    graph = DependencyGraph(producers)
     return graph.toposort()
 
-def get_all_requirements(producer_list, producer_infos):
+def get_all_requirements(exec_order, producers):
     requirements = []
-    for producer in producer_list:
-        requirements += producer_infos[producer]["requires"]
+    for i, producer in enumerate(producers):
+        if i in exec_order:
+            requirements += producer.requires
     return requirements
 
 def save(obj, name, path):
@@ -77,6 +71,47 @@ def save(obj, name, path):
     with open( file_name, "wb" ) as f:
         pickle.dump(obj, f)
     return os.path.getsize(file_name)
+
+import re
+
+class ProductMatch(object):
+
+    def __init__(self, product, producer):
+
+        regex = re.sub('<[^<>]*>', '[^/]*', producer.product)
+        match = re.match(regex+"$", product)
+
+        if match is None:
+            self.group = None
+            self.subs  = {}
+            self.score = 0
+            return
+
+        # The matching pattern
+        self.group = match.group()
+        # The "matching depth". Products which match deeper are resolving ambiguities.
+        self.score = self.group.count("/") + 1
+
+        # The substitutions for the template specialization
+        self.subs = {}
+        for t, s in zip(producer.product.split("/"), self.group.split("/")):
+            if t != s:
+                self.subs[t] = s
+
+import numpy as np
+
+def get_required_producers(product, Producers):
+    n = len(Producers)
+    matches = list(map(lambda P : ProductMatch(product, P), Producers))
+    # Penalize matching depth score with number of template specializations
+    # to give priority to full specializations.
+    scores = [m.score - len(m.subs)/100. for m in matches]
+    if max(scores) == 0: return []
+    i = np.argmax(scores)
+    producers = [Producers[i](matches[i].subs)]
+    for req in producers[0].requires:
+        producers += get_required_producers(req, Producers)
+    return producers
 
 def geek_run(config):
 
@@ -110,9 +145,18 @@ def geek_run(config):
     if hasattr(config, "cache_dir"): out_dir_base = config.cache_dir
     if hasattr(config, "out_dir")  : out_dir_base = config.out_dir
 
-    producer_infos = get_producer_infos(producers_path)
+    Producers = get_producer_classes(producers_path)
+    producers = []
 
-    exec_order = get_exec_order(producer_infos, target_products)
+    for t in target_products: producers += get_required_producers(t, Producers)
+    producers = list(set(producers))
+
+    print("Producers:")
+    for i, producer in enumerate(producers):
+        print("[{0}]".format(i), *producer.requires, "->", producer.product)
+
+
+    exec_order = get_exec_order(producers)
 
     # Create list of dataset instances from configuration tuples
     datasets = [Dataset(*args) for args in config.datasets]
@@ -129,25 +173,23 @@ def geek_run(config):
         record = full_record.get(dataset)
 
         # Loop over producers needed to get to the desired output products
-        for i_producer, name in enumerate(exec_order):
+        for i, ip in enumerate(exec_order):
 
-            print("Executing module "+name+"...")
+            print("Executing module "+ str(id(producers[ip])) +"...")
 
-            Producer = producer_infos[name]["class"]
-            producer = Producer()
-            producer.run(dataset, record)
+            product = producers[ip].run(record._dict)
+            pname = producers[ip].product
+            record._dict[pname] = product
 
-            if producer_infos[name]["cache"]:
-                for p in producer_infos[name]["produces"]:
-                    size = save(record.get(p), p, cache_dir)
-                    print("Caching product {0}: {1}".format(p, humanbytes(size)))
+            if producers[ip].cache:
+                size = save(product, pname, cache_dir)
+                print("Caching product {0}: {1}".format(pname, humanbytes(size)))
 
-            for p in producer_infos[name]["produces"]:
-                if p in target_products:
-                    size = save(record.get(p), p, out_dir)
-                    print("Saving output {0}: {1}".format(p, humanbytes(size)))
+            if pname in target_products:
+                size = save(product, pname, out_dir)
+                print("Saving output {0}: {1}".format(pname, humanbytes(size)))
 
-            requirements = get_all_requirements(exec_order[i_producer+1:], producer_infos)
+            requirements = get_all_requirements(exec_order[i+1:], producers)
             keys = record.to_list()
             for key in keys:
                 if key not in requirements:

@@ -1,57 +1,22 @@
 class DependencyGraph(object):
 
-    def __init__(self, producer_infos, target_products=None):
+    def __init__(self, producers):
+
         requires_dict = {}
-        for name, info in producer_infos.items():
-            for req in info["requires"]:
+        for i, p in enumerate(producers):
+            for req in p.requires:
                 if req not in requires_dict:
                     requires_dict[req] = []
-                requires_dict[req] += [name]
+                requires_dict[req] += [i]
 
         graph = {}
-        for name, info in producer_infos.items():
-            graph[name] = []
-            for prod in info["produces"]:
-                if not prod in requires_dict: continue
-                for other in requires_dict[prod]:
-                    graph[name] += [other]
+        for i, p in enumerate(producers):
+            graph[i] = []
+            if not p.product in requires_dict: continue
+            for other in requires_dict[p.product]:
+                graph[i] += [other]
 
-        # If target_products is None, which means produce everything, we are done.
         self.graph = dict(graph)
-        self.producer_infos = dict(producer_infos)
-
-        if target_products is None:
-            return
-
-        # Otherwise we want to prune the graph such that only products needed to
-        # produce our targets are calculated
-        self.prune(target_products)
-
-    def prune(self, target_products):
-        output_producers = []
-        for name, info in self.producer_infos.items():
-            for prod in info["produces"]:
-                if prod in target_products:
-                    output_producers.append(name)
-
-        pruned = True
-        while(pruned):
-            pruned = False
-            for name, lst in self.graph.items():
-                if not name in output_producers and lst == []:
-                    self.remove(name)
-                    pruned = True
-
-    def remove(self, name):
-        """ Remove an element from a graph and return new graph.
-        """
-        # make a copy
-        graph = dict(self.graph)
-        graph.pop(name, None)
-        for key, lst in graph.items():
-            if name in lst: lst.remove(name)
-
-        self.graph = graph
 
     def toposort(self):
         """Kahn toposort.

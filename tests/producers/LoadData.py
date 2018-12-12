@@ -1,16 +1,14 @@
-from geeksw.core import Plot
-from geeksw.core import SingleDatasetProducer
+from geeksw.core import Producer
 
 import numpy as np
 
-class LoadData(SingleDatasetProducer):
+class LoadData(Producer):
 
-    produces = ["x"]
+    product = "x"
+    requires = []
 
-    def __init__(self):
-        pass
+    def run(self, inputs): 
 
-    def run(self, dataset, record): 
+        path = None
 
-        x = np.load(os.path.join(dataset.file_path, "data.npy"))
-        record.put("x", x)
+        return np.load(os.path.join(path, "data.npy"))

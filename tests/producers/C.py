@@ -1,13 +1,10 @@
-from geeksw.core import SingleDatasetProducer
+from geeksw.core import Producer
 
-class C(SingleDatasetProducer):
+class C(Producer):
 
-    produces = ["win/win"]
+    product = "win/win"
     requires = ["foo", "jenkins"]
 
-    def __init__(self):
-        pass
+    def run(self, inputs):
 
-    def run(self, dataset, record): 
-
-        record.put("win/win", "Win"+record.get("foo").title()+record.get("jenkins").title())
+        return "Win" + inputs["foo"].title() + inputs["jenkins"].title()
