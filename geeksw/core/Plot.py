@@ -22,14 +22,14 @@ class Plot(object):
         for suffix in ["pkl", "png", "pdf"]:
             mkdir(os.path.join(path, suffix, os.path.dirname(name)))
 
-        file_name = os.path.join(path, "pkl", name + ".pkl")
+        file_name = os.path.join(path, name + ".pkl")
         with open( file_name, "wb" ) as f:
             pickle.dump(self.figure_handle, f)
         size += os.path.getsize(file_name)
-        file_name = os.path.join(path, "png", name + ".png")
+        file_name = os.path.join(path, name + ".png")
         self.figure_handle.savefig(file_name, dpi=300, **self.savefig_kwargs)
         size += os.path.getsize(file_name)
-        file_name = os.path.join(path, "pdf", name + ".pdf")
+        file_name = os.path.join(path, name + ".pdf")
         self.figure_handle.savefig(file_name, **self.savefig_kwargs)
         size += os.path.getsize(file_name)
         return size

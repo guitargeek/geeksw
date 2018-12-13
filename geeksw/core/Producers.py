@@ -14,16 +14,19 @@ class Producer(object):
 
         self.working_dir = working_dir
 
+        self.full_product = self.working_dir + self.product
+        self.full_requires = [self.working_dir + req for req in self.requires]
+
     def __eq__(self, other):
         """ Check if producer has same template specialization.
         """
         if type(self) != type(other):
             return False
-        return self.product == other.product and self.working_dir == other.working_dir
+        return self.full_product == other.full_product
 
     def __hash__(self):
         """ Should be some collision free hash function to spot duplicate producers.
             Used in set().
         """
-        return hash(self.working_dir + self.product)
+        return hash(self.full_product)
 

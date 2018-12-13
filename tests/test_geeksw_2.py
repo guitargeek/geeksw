@@ -14,12 +14,12 @@ datasets = [
             ("datasets/data2", "/data2"),
             ("datasets/data3", "/data3"),
            ]
-producers = "producers"
-products  = ["/*/win/win",]
-out_dir   = "test_geeksw_output"
+producers = "producers_2"
+products  = ["/plot"]
+out_dir   = "test_output_2"
 """)
 
-        for dataset, record in records.get("**").items():
+        for dataset, record in records.items():
             self.assertTrue(record._dict == dict())
 
 if __name__ == '__main__':
