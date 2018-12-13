@@ -12,8 +12,8 @@ class DependencyGraph(object):
         graph = {}
         for i, p in enumerate(producers):
             graph[i] = []
-            if not p.product in requires_dict: continue
-            for other in requires_dict[p.product]:
+            if not p.full_product in requires_dict: continue
+            for other in requires_dict[p.full_product]:
                 graph[i] += [other]
 
         self.graph = dict(graph)

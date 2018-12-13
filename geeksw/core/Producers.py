@@ -7,7 +7,7 @@ def path_product(p1, p2):
 
 def expand_wildcard(product, out_dir):
     if not "*" in product:
-        return product
+        return [product]
     i = product[::-1].find("*")
     wildcard_expr = os.path.join(out_dir, product[:-i])
     rest = product[-i:]
@@ -15,6 +15,7 @@ def expand_wildcard(product, out_dir):
 
 class Producer(object):
 
+    requires = []
     cache = False
 
     def expand_full_requires(self, flatten=False):

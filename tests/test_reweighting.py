@@ -72,7 +72,7 @@ class ReweightingTests(unittest.TestCase):
         print("Mean of pull distribution: {:.4f}".format(mu))
         print("Std of pull distribution : {:.4f}".format(std))
         
-        print("Checking if mean is withing 0.0 ± 0.1 and std within 1.0 ± 0.1")
+        print("Checking if mean is withing 0.0 +/- 0.1 and std within 1.0 +/- 0.1")
         self.assertTrue(abs(mu) < tol_mu and abs(1 - std) < tol_std)
 
 if __name__ == '__main__':

@@ -19,8 +19,7 @@ class Plot(object):
 
         self.figure_handle = pickle.loads(self.dump)
 
-        for suffix in ["pkl", "png", "pdf"]:
-            mkdir(os.path.join(path, suffix, os.path.dirname(name)))
+        mkdir(os.path.join(path, os.path.dirname(name)))
 
         file_name = os.path.join(path, name + ".pkl")
         with open( file_name, "wb" ) as f:

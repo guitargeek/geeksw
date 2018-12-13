@@ -111,12 +111,6 @@ import numpy as np
 
 def get_required_producers(product, Producers, out_dir):
 
-    if '*' in product:
-        producers = []
-        for p in expand_wildcard(product, out_dir):
-            producers += get_required_producers(p[1:], Producers, out_dir)
-        return producers
-
     n = len(Producers)
     matches = list(map(lambda P : ProductMatch(product, P), Producers))
     # Penalize matching depth score with number of template specializations
@@ -172,16 +166,18 @@ def geek_run(config):
     Producers = get_producer_classes(producers_path)
     producers = []
 
-    print(target_products)
+    target_products = [expand_wildcard(t[1:], out_dir) for t in target_products]
+    target_products = [y for x in target_products for y in x]
 
-    for t in target_products: producers += get_required_producers(t[1:], Producers, out_dir)
+    for t in target_products: producers += get_required_producers(t, Producers, out_dir)
     producers = list(set(producers))
 
-    print("Producers:")
-    for i, producer in enumerate(producers):
-        print("[{0}]".format(i), *producer.requires, "->", producer.product)
-
     exec_order = get_exec_order(producers)
+
+    print("Producers:")
+    for i in exec_order:
+        print(" ".join(["{0}.".format(i)] + producers[i].requires + ["->", producers[i].product]))
+
 
     record = {}
 
@@ -189,19 +185,19 @@ def geek_run(config):
     for i, ip in enumerate(exec_order):
 
         pname = producers[ip].full_product
-        print("Producing", pname, "...")
+        print("Producing " + pname + "...")
 
         working_dir = producers[ip].working_dir
         inputs = {}
         for req, full_req in zip(producers[ip].requires, producers[ip].expand_full_requires()):
-            if type(full_req) == list:
+            if len(full_req) > 1:
                 inputs[req] = {}
                 for x in full_req:
                     n = req.count("/")
                     short_name = "/".join(x.split("/")[-n-1:])
                     inputs[req][short_name] = record[x]
             else:
-                inputs[req] = record[full_req]
+                inputs[req] = record[full_req[0]]
 
         product = producers[ip].run(inputs)
         record[pname] = product
