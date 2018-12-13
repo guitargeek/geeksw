@@ -2,26 +2,23 @@ import sys
 import os
 import pickle
 import inspect
-import glob
 
 from .helpers import *
 from .DependencyGraph import DependencyGraph
 from .Plot import Plot
-from .Record import Record, FullRecord, Dataset
 from .Producers import Producer as GeekProducer
+from .Producers import expand_wildcard
 
 def mkdir(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
-def path_product(p1, p2):
-    return [os.path.join(*x) for x in itertools.product(p1, p2)]
+class Dataset(object):
 
-def expand_wildcard(product, out_dir):
-    i = product[::-1].find("*")
-    wildcard_expr = os.path.join(out_dir, product[:-i])
-    rest = product[-i:]
-    return [path[len(out_dir):] + rest for path in glob.glob(wildcard_expr)]
+    def __init__(self, file_path, geeksw_path):
+        self.file_path = file_path
+        self.geeksw_path = geeksw_path
+
 
 def load_module(name, path_to_file):
     if sys.version_info < (3, 0):
@@ -66,7 +63,7 @@ def get_all_requirements(exec_order, producers):
     requirements = []
     for i, producer in enumerate(producers):
         if i in exec_order:
-            requirements += producer.full_requires
+            requirements += producer.expand_full_requires(flatten=True)
     return requirements
 
 def save(obj, name, path):
@@ -129,14 +126,10 @@ def get_required_producers(product, Producers, out_dir):
     i = np.argmax(scores)
 
     working_dir = product[:-len(matches[i].group)]
-    producers = [Producers[i](matches[i].subs, working_dir)]
+    producers = [Producers[i](matches[i].subs, working_dir, out_dir)]
 
-    for i, req in enumerate(producers[0].requires):
-
-        if "*" in req:
-            producers[0].requires[i] = expand_wildcard(req, out_dir)
-
-        producers += get_required_producers(os.path.join(working_dir, req), Producers, out_dir)
+    for i, req in enumerate(producers[0].expand_full_requires(flatten=True)):
+        producers += get_required_producers(req, Producers, out_dir)
 
     return producers
 
@@ -200,8 +193,15 @@ def geek_run(config):
 
         working_dir = producers[ip].working_dir
         inputs = {}
-        for req in producers[ip].requires:
-            inputs[req] = record[os.path.join(working_dir, req)]
+        for req, full_req in zip(producers[ip].requires, producers[ip].expand_full_requires()):
+            if type(full_req) == list:
+                inputs[req] = {}
+                for x in full_req:
+                    n = req.count("/")
+                    short_name = "/".join(x.split("/")[-n-1:])
+                    inputs[req][short_name] = record[x]
+            else:
+                inputs[req] = record[full_req]
 
         product = producers[ip].run(inputs)
         record[pname] = product
@@ -215,6 +215,7 @@ def geek_run(config):
             print("Saving output {0}: {1}".format(pname, humanbytes(size)))
 
         requirements = get_all_requirements(exec_order[i+1:], producers)
+
         for key in list(record.keys()):
             if key not in requirements:
                 del record[key]

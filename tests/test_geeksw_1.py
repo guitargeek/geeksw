@@ -8,7 +8,7 @@ class GeekswTests(unittest.TestCase):
         test_dir = os.path.dirname(__file__)
 
         # We give the config file as a string to keep the test more compact
-        records = geek_run("""
+        record = geek_run("""
 datasets = [
             ("datasets/data1", "/data1"),
             ("datasets/data2", "/data2"),
@@ -19,8 +19,7 @@ products  = ["/*/win/win"]
 out_dir   = "test_output_1"
 """)
 
-        for dataset, record in records.items():
-            self.assertTrue(record._dict == dict())
+        self.assertTrue(record == dict())
 
 if __name__ == '__main__':
 

@@ -4,7 +4,7 @@ class DependencyGraph(object):
 
         requires_dict = {}
         for i, p in enumerate(producers):
-            for req in p.requires:
+            for req in p.expand_full_requires(flatten=True):
                 if req not in requires_dict:
                     requires_dict[req] = []
                 requires_dict[req] += [i]

@@ -1,6 +1,7 @@
 from geeksw.core import Producer
 
 import numpy as np
+import os.path
 
 class DataLoader(Producer):
 
@@ -9,7 +10,5 @@ class DataLoader(Producer):
 
     def run(self, inputs): 
 
-        path = None
-
-        # return np.load(os.path.join(path, "data.npy"))
-        return self.product
+        path = os.path.join("datasets", self.subs["<dataset>"], "data.npy")
+        return np.load(path)
