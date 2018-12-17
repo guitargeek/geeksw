@@ -175,8 +175,8 @@ def geek_run(config):
     exec_order = get_exec_order(producers)
 
     print("Producers:")
-    for i in exec_order:
-        print(" ".join(["{0}.".format(i)] + producers[i].requires + ["->", producers[i].product]))
+    for i, ip in enumerate(exec_order):
+        print(" ".join(["{0}.".format(i)] + producers[ip].requires + ["->", producers[ip].product]))
 
 
     record = {}
@@ -189,13 +189,13 @@ def geek_run(config):
 
         working_dir = producers[ip].working_dir
         inputs = {}
-        for req, full_req in zip(producers[ip].requires, producers[ip].expand_full_requires()):
+        for req, full_req in zip(producers[ip].requires, producers[ip].full_requires_expanded):
             if len(full_req) > 1:
-                inputs[req] = {}
+                inputs[req] = []
                 for x in full_req:
                     n = req.count("/")
                     short_name = "/".join(x.split("/")[-n-1:])
-                    inputs[req][short_name] = record[x]
+                    inputs[req].append((short_name, record[x]))
             else:
                 inputs[req] = record[full_req[0]]
 

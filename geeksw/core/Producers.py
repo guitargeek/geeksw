@@ -41,6 +41,7 @@ class Producer(object):
 
         self.full_product = self.working_dir + self.product
         self.full_requires = [self.working_dir + req for req in self.requires]
+        self.full_requires_expanded = self.expand_full_requires()
 
     def __eq__(self, other):
         """ Check if producer has same template specialization.
