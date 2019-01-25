@@ -1,5 +1,6 @@
 from geeksw.core import Producer
 
+
 class C(Producer):
 
     product = "win/win"

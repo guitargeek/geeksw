@@ -1,8 +1,8 @@
 class Dataset(object):
-
     def __init__(self, file_path, geeksw_path):
         self.file_path = file_path
         self.geeksw_path = geeksw_path
+
 
 class Record(object):
     _dict = {}
@@ -22,6 +22,7 @@ class Record(object):
     def delete(self, key):
         del self._dict[key]
 
+
 class FullRecord(object):
     _records = {}
 
@@ -37,4 +38,4 @@ class FullRecord(object):
             for key, rcd in self._records.items():
                 records[key] = rcd
             return records
-        raise ValueError('Not implemented.')
+        raise ValueError("Not implemented.")

@@ -4,6 +4,7 @@ Reweighting-related functions
 
 import numpy as np
 
+
 def reweight1d(a, reference=1, bins=10, get_w_ref=False):
     """Get weights for a 1d array to match the distribution of another array.
 
@@ -62,17 +63,17 @@ def reweight1d(a, reference=1, bins=10, get_w_ref=False):
     h = np.array(h, dtype=np.float)
 
     if hasattr(reference, "__len__"):
-        h_ref, _  = np.histogram(reference, bins=bin_edges)
+        h_ref, _ = np.histogram(reference, bins=bin_edges)
         h_ref = np.array(h_ref, dtype=np.float)
     else:
         h_ref = reference
 
-    h_w = np.divide(h_ref, h, out=np.zeros_like(h), where=h!=0)
-    h_w = np.concatenate([[0.], h_w, [0.]])
+    h_w = np.divide(h_ref, h, out=np.zeros_like(h), where=h != 0)
+    h_w = np.concatenate([[0.0], h_w, [0.0]])
 
     h_w[np.isinf(h_w)] = 0
 
-    w = h_w[np.clip(np.digitize(a  , bin_edges), 0, len(bin_edges))]
+    w = h_w[np.clip(np.digitize(a, bin_edges), 0, len(bin_edges))]
 
     if get_w_ref:
         w_ref = h_w[np.clip(np.digitize(reference, bin_edges), 0, len(bin_edges))] > 0

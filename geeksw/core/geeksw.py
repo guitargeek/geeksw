@@ -9,12 +9,13 @@ from .Plot import Plot
 from .Producers import Producer as GeekProducer
 from .Producers import expand_wildcard
 
+
 def mkdir(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
-class Dataset(object):
 
+class Dataset(object):
     def __init__(self, file_path, geeksw_path):
         self.file_path = file_path
         self.geeksw_path = geeksw_path
@@ -23,12 +24,15 @@ class Dataset(object):
 def load_module(name, path_to_file):
     if sys.version_info < (3, 0):
         import imp
+
         return imp.load_source(name, path_to_file)
     if sys.version_info < (3, 5):
         from importlib.machinery import SourceFileLoader
+
         return SourceFileLoader(name, path_to_file).load_module()
     else:
         import importlib.util
+
         spec = importlib.util.spec_from_file_location(name, path_to_file)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
@@ -37,13 +41,13 @@ def load_module(name, path_to_file):
 
 def get_producer_classes(producers_path):
     Producers = []
-    hashes = [] # file hashes to track changes
+    hashes = []  # file hashes to track changes
 
     for file_name in os.listdir(producers_path):
-        if file_name == '__init__.py' or file_name[-3:] != '.py':
+        if file_name == "__init__.py" or file_name[-3:] != ".py":
             continue
         name = file_name[:-3]
-        module = load_module(name, os.path.join(producers_path,file_name))
+        module = load_module(name, os.path.join(producers_path, file_name))
         for item in dir(module):
             Producer = getattr(module, item)
             if not inspect.isclass(Producer) or not GeekProducer in Producer.__bases__:
@@ -55,9 +59,11 @@ def get_producer_classes(producers_path):
 
     return Producers
 
+
 def get_exec_order(producers):
     graph = DependencyGraph(producers)
     return graph.toposort()
+
 
 def get_all_requirements(exec_order, producers):
     requirements = []
@@ -65,6 +71,7 @@ def get_all_requirements(exec_order, producers):
         if i in exec_order:
             requirements += producer.expand_full_requires(flatten=True)
     return requirements
+
 
 def save(obj, name, path):
 
@@ -75,29 +82,30 @@ def save(obj, name, path):
     # If there is no special rule, just pickle
     file_name = os.path.join(path, name + ".pkl")
     mkdir(os.path.dirname(file_name))
-    with open( file_name, "wb" ) as f:
+    with open(file_name, "wb") as f:
         pickle.dump(obj, f)
     return os.path.getsize(file_name)
 
+
 import re
 
-class ProductMatch(object):
 
+class ProductMatch(object):
     def __init__(self, product, producer):
 
-        regex = re.sub('<[^<>]*>', '[^/]*', producer.product)
-        match = re.match(".*"+regex+"$", product)
+        regex = re.sub("<[^<>]*>", "[^/]*", producer.product)
+        match = re.match(".*" + regex + "$", product)
 
         if match is None:
             self.group = None
-            self.subs  = {}
+            self.subs = {}
             self.score = 0
             return
 
         depth = producer.product.count("/")
 
         # The matching pattern
-        self.group = "/".join(match.group().split("/")[-depth-1:])
+        self.group = "/".join(match.group().split("/")[-depth - 1 :])
         # The "matching depth". Products which match deeper are resolving ambiguities.
         self.score = self.group.count("/") + 1
 
@@ -107,19 +115,22 @@ class ProductMatch(object):
             if t != s:
                 self.subs[t] = s
 
+
 import numpy as np
+
 
 def get_required_producers(product, Producers, out_dir):
 
     n = len(Producers)
-    matches = list(map(lambda P : ProductMatch(product, P), Producers))
+    matches = list(map(lambda P: ProductMatch(product, P), Producers))
     # Penalize matching depth score with number of template specializations
     # to give priority to full specializations.
-    scores = [m.score - len(m.subs)/100. for m in matches]
-    if max(scores) == 0: return []
+    scores = [m.score - len(m.subs) / 100.0 for m in matches]
+    if max(scores) == 0:
+        return []
     i = np.argmax(scores)
 
-    working_dir = product[:-len(matches[i].group)]
+    working_dir = product[: -len(matches[i].group)]
     producers = [Producers[i](matches[i].subs, working_dir, out_dir)]
 
     for i, req in enumerate(producers[0].expand_full_requires(flatten=True)):
@@ -127,11 +138,12 @@ def get_required_producers(product, Producers, out_dir):
 
     return producers
 
+
 def geek_run(config):
 
     try:
         # Try to open the file to see if it's a valid file path
-        with open(config, 'r') as f:
+        with open(config, "r") as f:
             pass
     except:
         # If the passed config was not a file, maybe if was a string that is
@@ -154,14 +166,15 @@ def geek_run(config):
     target_products = config.products
 
     cache_dir = config.cache_dir if hasattr(config, "cache_dir") else "cache"
-    out_dir   = config.out_dir   if hasattr(config, "out_dir")   else "output"
+    out_dir = config.out_dir if hasattr(config, "out_dir") else "output"
 
     # Create list of dataset instances from configuration tuples
     datasets = [Dataset(*args) for args in config.datasets]
 
     # Create the output dir structure
-    os.system("rm -rf "+out_dir) # Delete previous output to not confuse glob
-    for ds in datasets: mkdir(os.path.join(out_dir, "."+ds.geeksw_path))
+    os.system("rm -rf " + out_dir)  # Delete previous output to not confuse glob
+    for ds in datasets:
+        mkdir(os.path.join(out_dir, "." + ds.geeksw_path))
 
     Producers = get_producer_classes(producers_path)
     producers = []
@@ -169,15 +182,21 @@ def geek_run(config):
     target_products = [expand_wildcard(t[1:], out_dir) for t in target_products]
     target_products = [y for x in target_products for y in x]
 
-    for t in target_products: producers += get_required_producers(t, Producers, out_dir)
+    for t in target_products:
+        producers += get_required_producers(t, Producers, out_dir)
     producers = list(set(producers))
 
     exec_order = get_exec_order(producers)
 
     print("Producers:")
     for i, ip in enumerate(exec_order):
-        print(" ".join(["{0}.".format(i)] + producers[ip].requires + ["->", producers[ip].product]))
-
+        print(
+            " ".join(
+                ["{0}.".format(i)]
+                + producers[ip].requires
+                + ["->", producers[ip].product]
+            )
+        )
 
     record = {}
 
@@ -189,12 +208,14 @@ def geek_run(config):
 
         working_dir = producers[ip].working_dir
         inputs = {}
-        for req, full_req in zip(producers[ip].requires, producers[ip].full_requires_expanded):
+        for req, full_req in zip(
+            producers[ip].requires, producers[ip].full_requires_expanded
+        ):
             if len(full_req) > 1:
                 inputs[req] = []
                 for x in full_req:
                     n = req.count("/")
-                    short_name = "/".join(x.split("/")[-n-1:])
+                    short_name = "/".join(x.split("/")[-n - 1 :])
                     inputs[req].append((short_name, record[x]))
             else:
                 inputs[req] = record[full_req[0]]
@@ -210,7 +231,7 @@ def geek_run(config):
             size = save(product, pname, out_dir)
             print("Saving output {0}: {1}".format(pname, humanbytes(size)))
 
-        requirements = get_all_requirements(exec_order[i+1:], producers)
+        requirements = get_all_requirements(exec_order[i + 1 :], producers)
 
         for key in list(record.keys()):
             if key not in requirements:

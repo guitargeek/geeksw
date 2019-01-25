@@ -1,5 +1,6 @@
 from geeksw.core import Producer
 
+
 class B(Producer):
 
     product = "jenkins"

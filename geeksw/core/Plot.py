@@ -1,13 +1,16 @@
 import pickle
 import os
 
+
 def mkdir(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
+
 class Plot(object):
     def __init__(self, **kwargs):
         import matplotlib.pyplot as plt
+
         self.figure_handle = plt.figure(**kwargs)
 
     def commit(self, **savefig_kwargs):
@@ -22,7 +25,7 @@ class Plot(object):
         mkdir(os.path.join(path, os.path.dirname(name)))
 
         file_name = os.path.join(path, name + ".pkl")
-        with open( file_name, "wb" ) as f:
+        with open(file_name, "wb") as f:
             pickle.dump(self.figure_handle, f)
         size += os.path.getsize(file_name)
         file_name = os.path.join(path, name + ".png")

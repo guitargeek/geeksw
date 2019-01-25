@@ -2,8 +2,10 @@ import os.path
 import glob
 import itertools
 
+
 def path_product(p1, p2):
     return [os.path.join(*x) for x in itertools.product(p1, p2)]
+
 
 def expand_wildcard(product, out_dir):
     if not "*" in product:
@@ -11,7 +13,8 @@ def expand_wildcard(product, out_dir):
     i = product[::-1].find("*")
     wildcard_expr = os.path.join(out_dir, product[:-i])
     rest = product[-i:]
-    return [path[len(out_dir)+1:] + rest for path in glob.glob(wildcard_expr)]
+    return [path[len(out_dir) + 1 :] + rest for path in glob.glob(wildcard_expr)]
+
 
 class Producer(object):
 
@@ -25,7 +28,6 @@ class Producer(object):
         return expanded
 
     def __init__(self, subs, working_dir, out_dir):
-
         def replace_from_dict(s, subs):
             for t in subs:
                 s = s.replace(t, subs[t])
@@ -55,4 +57,3 @@ class Producer(object):
             Used in set().
         """
         return hash(self.full_product)
-

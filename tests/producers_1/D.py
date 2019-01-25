@@ -1,5 +1,6 @@
 from geeksw.core import Producer
 
+
 class D(Producer):
 
     product = "foo"
