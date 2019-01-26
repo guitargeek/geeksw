@@ -121,6 +121,9 @@ import numpy as np
 
 def get_required_producers(product, Producers, out_dir):
 
+    print(product)
+    print([p.product for p in Producers])
+
     n = len(Producers)
     matches = list(map(lambda P: ProductMatch(product, P), Producers))
     # Penalize matching depth score with number of template specializations

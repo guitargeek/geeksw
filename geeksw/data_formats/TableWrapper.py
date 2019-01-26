@@ -6,6 +6,9 @@ class TableWrapper(awkward.Table):
     def __init__(self, *args, **kwargs):
         super(TableWrapper, self).__init__(*args, **kwargs)
 
+        self._set_column_attributes()
+
+    def _set_column_attributes(self):
         # The columns as attributes should only be used as read-only,
         # since setting via them doesn't run the validation!
         for col in self.columns:
@@ -17,7 +20,10 @@ class TableWrapper(awkward.Table):
         data = {}
 
         for key, col_name in branches.items():
-            data[key] = tree.array(col_name)
+            if isinstance(tree, list):
+                data[key] = awkward.util.concatenate([t.array(col_name) for t in tree])
+            else:
+                data[key] = tree.array(col_name)
 
         return cls(**data)
 
@@ -34,4 +40,10 @@ class TableWrapper(awkward.Table):
         return super(TableWrapper, self).__getitem__(where)
 
     def _slice_mask(self, mask):
-        return TableWrapper([(key, x[mask]) for key, x in self._contents.items()])
+
+        data = {}
+
+        for key, x in self._contents.items():
+            data[key] = x[mask]
+
+        return TableWrapper(**data)

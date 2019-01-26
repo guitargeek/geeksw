@@ -1,4 +1,4 @@
-from .JaggedData import JaggedData
+from .TableWrapper import TableWrapper
 
 
 class Particles(TableWrapper):

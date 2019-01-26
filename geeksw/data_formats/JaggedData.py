@@ -71,8 +71,3 @@ class JaggedData(object):
 
     def __len__(self):
         return len(self._data[0])
-
-    def __repr__(self):
-        class_name = self.__class__.__name__
-        content_size = len(self._data[0].content)
-        return class_name + f" of length {len(self)} and content length {content_size}"
