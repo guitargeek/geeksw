@@ -1,15 +1,11 @@
-from geeksw.core import Producer
+from geeksw.core import produces, requires
 
 import numpy as np
 import os.path
 
 
-class DataLoader(Producer):
+@produces("<dataset>/x")
+def run(meta):
 
-    product = "<dataset>/x"
-    requires = []
-
-    def run(self, inputs):
-
-        path = os.path.join("datasets", self.subs["<dataset>"], "data.npy")
-        return np.load(path)
+    path = os.path.join("datasets", meta.subs["<dataset>"], "data.npy")
+    return np.load(path)

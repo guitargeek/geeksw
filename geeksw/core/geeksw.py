@@ -9,6 +9,8 @@ from .Plot import Plot
 from .Producers import Producer as GeekProducer
 from .Producers import expand_wildcard
 
+class MetaInfo(object):
+    pass
 
 def mkdir(path):
     if not os.path.exists(path):
@@ -39,8 +41,8 @@ def load_module(name, path_to_file):
         return module
 
 
-def get_producer_classes(producers_path):
-    Producers = []
+def get_producer_funcs(producers_path):
+    producer_funcs = []
     hashes = []  # file hashes to track changes
 
     for file_name in os.listdir(producers_path):
@@ -49,15 +51,15 @@ def get_producer_classes(producers_path):
         name = file_name[:-3]
         module = load_module(name, os.path.join(producers_path, file_name))
         for item in dir(module):
-            Producer = getattr(module, item)
-            if not inspect.isclass(Producer) or not GeekProducer in Producer.__bases__:
+            func = getattr(module, item)
+            if not hasattr(func, "product") or not hasattr(func, "requirements"):
                 continue
             file_path = os.path.join(producers_path, file_name)
-            Producers.append(Producer)
+            producer_funcs.append(func)
             hashes += hash_file(file_path)
     del file_name
 
-    return Producers
+    return producer_funcs
 
 
 def get_exec_order(producers):
@@ -93,6 +95,8 @@ import re
 class ProductMatch(object):
     def __init__(self, product, producer):
 
+        print(producer.product)
+
         regex = re.sub("<[^<>]*>", "[^/]*", producer.product)
         match = re.match(".*" + regex + "$", product)
 
@@ -119,13 +123,13 @@ class ProductMatch(object):
 import numpy as np
 
 
-def get_required_producers(product, Producers, out_dir):
+def get_required_producers(product, producer_funcs, out_dir):
 
     print(product)
-    print([p.product for p in Producers])
+    print([p.product for p in producer_funcs])
 
-    n = len(Producers)
-    matches = list(map(lambda P: ProductMatch(product, P), Producers))
+    n = len(producer_funcs)
+    matches = list(map(lambda P: ProductMatch(product, P), producer_funcs))
     # Penalize matching depth score with number of template specializations
     # to give priority to full specializations.
     scores = [m.score - len(m.subs) / 100.0 for m in matches]
@@ -134,10 +138,10 @@ def get_required_producers(product, Producers, out_dir):
     i = np.argmax(scores)
 
     working_dir = product[: -len(matches[i].group)]
-    producers = [Producers[i](matches[i].subs, working_dir, out_dir)]
+    producers = [GeekProducer(producer_funcs[i], matches[i].subs, working_dir, out_dir)]
 
     for i, req in enumerate(producers[0].expand_full_requires(flatten=True)):
-        producers += get_required_producers(req, Producers, out_dir)
+        producers += get_required_producers(req, producer_funcs, out_dir)
 
     return producers
 
@@ -179,14 +183,14 @@ def geek_run(config):
     for ds in datasets:
         mkdir(os.path.join(out_dir, "." + ds.geeksw_path))
 
-    Producers = get_producer_classes(producers_path)
+    producer_funcs = get_producer_funcs(producers_path)
     producers = []
 
     target_products = [expand_wildcard(t[1:], out_dir) for t in target_products]
     target_products = [y for x in target_products for y in x]
 
     for t in target_products:
-        producers += get_required_producers(t, Producers, out_dir)
+        producers += get_required_producers(t, producer_funcs, out_dir)
     producers = list(set(producers))
 
     exec_order = get_exec_order(producers)
@@ -212,7 +216,7 @@ def geek_run(config):
         working_dir = producers[ip].working_dir
         inputs = {}
         for req, full_req in zip(
-            producers[ip].requires, producers[ip].full_requires_expanded
+            producers[ip].input_names, producers[ip].full_requires_expanded
         ):
             if len(full_req) > 1:
                 inputs[req] = []
@@ -223,7 +227,11 @@ def geek_run(config):
             else:
                 inputs[req] = record[full_req[0]]
 
-        product = producers[ip].run(inputs)
+        if producers[ip].run._is_template:
+            inputs["meta"] = MetaInfo()
+            inputs["meta"].subs = producers[ip].subs
+
+        product = producers[ip].run(**inputs)
         record[pname] = product
 
         if producers[ip].cache:

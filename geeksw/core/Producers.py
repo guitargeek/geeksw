@@ -27,7 +27,14 @@ class Producer(object):
             return [y for x in expanded for y in x]
         return expanded
 
-    def __init__(self, subs, working_dir, out_dir):
+    def __init__(self, func, subs, working_dir, out_dir):
+
+        self.product = func.product
+        self.input_names = func.requirements.keys()
+        self.requires = func.requirements.values()
+
+        self.run = func
+
         def replace_from_dict(s, subs):
             for t in subs:
                 s = s.replace(t, subs[t])

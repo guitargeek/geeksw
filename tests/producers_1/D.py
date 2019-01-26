@@ -1,10 +1,7 @@
-from geeksw.core import Producer
+from geeksw.core import produces, requires
 
 
-class D(Producer):
+@produces("foo")
+def produce():
 
-    product = "foo"
-    requires = []
-
-    def run(self, inputs):
-        return "foo"
+    return "foo"

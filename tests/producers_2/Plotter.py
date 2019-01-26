@@ -1,20 +1,17 @@
-from geeksw.core import Producer
+from geeksw.core import produces, requires
 
 import numpy as np
 import matplotlib.pyplot as plt
 
 
-class Plotter(Producer):
+@produces("plot")
+@requires(x="*/x")
+def run(x):
 
-    product = "plot"
-    requires = ["*/x"]
+    plt.figure()
+    for k, v in x:
+        plt.hist(v, label=k)
+    plt.legend(loc="upper right")
+    plt.show()
 
-    def run(self, inputs):
-
-        plt.figure()
-        for k, v in inputs["*/x"].items():
-            plt.hist(v, label=k)
-        plt.legend(loc="upper right")
-        plt.show()
-
-        return None
+    return None
