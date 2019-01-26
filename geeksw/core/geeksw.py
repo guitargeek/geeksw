@@ -113,6 +113,11 @@ class ProductMatch(object):
         # The "matching depth". Products which match deeper are resolving ambiguities.
         self.score = self.group.count("/") + 1
 
+        # hotfix for problem in pattern matching:
+        # producers where the last identifier in the path is matched are usually to be favoured
+        if producer.product.split("/")[-1] == product.split("/")[-1]:
+            self.score = self.score + 100
+
         # The substitutions for the template specialization
         self.subs = {}
         for t, s in zip(producer.product.split("/"), self.group.split("/")):
@@ -230,6 +235,7 @@ def geek_run(config):
         if producers[ip].run._is_template:
             inputs["meta"] = MetaInfo()
             inputs["meta"].subs = producers[ip].subs
+            inputs["meta"].working_dir = producers[ip].working_dir
 
         product = producers[ip].run(**inputs)
         record[pname] = product
