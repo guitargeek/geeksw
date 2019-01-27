@@ -2,6 +2,8 @@ import sys
 import os
 import pickle
 import inspect
+import threading
+import time
 
 from .helpers import *
 from .DependencyGraph import DependencyGraph
@@ -9,8 +11,13 @@ from .Plot import Plot
 from .Producers import Producer as GeekProducer
 from .Producers import expand_wildcard
 
+
 class MetaInfo(object):
-    pass
+
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
 
 def mkdir(path):
     if not os.path.exists(path):
@@ -65,14 +72,6 @@ def get_producer_funcs(producers_path):
 def get_exec_order(producers):
     graph = DependencyGraph(producers)
     return graph.toposort()
-
-
-def get_all_requirements(exec_order, producers):
-    requirements = []
-    for i, producer in enumerate(producers):
-        if i in exec_order:
-            requirements += producer.expand_full_requires(flatten=True)
-    return requirements
 
 
 def save(obj, name, path):
@@ -207,42 +206,77 @@ def geek_run(config):
 
     record = {}
 
-    # Loop over producers needed to get to the desired output products
-    for i, ip in enumerate(exec_order):
+    def run_producer(producer):
 
-        pname = producers[ip].full_product
+        pname = producer.full_product
         print("Producing " + pname + "...")
 
-        working_dir = producers[ip].working_dir
+        working_dir = producer.working_dir
         inputs = {}
         for req, full_req in zip(
-            producers[ip].input_names, producers[ip].full_requires_expanded
+            producer.input_names, producer.full_requires_expanded
         ):
             if len(full_req) > 1:
                 inputs[req] = [(x, record[x]) for x in full_req]
             else:
                 inputs[req] = record[full_req[0]]
 
-        if producers[ip].run._is_template:
-            inputs["meta"] = MetaInfo()
-            inputs["meta"].subs = producers[ip].subs
-            inputs["meta"].working_dir = producers[ip].working_dir
+        if producer.run._is_template:
+            inputs["meta"] = MetaInfo(subs = producer.subs,
+                                      working_dir = producer.working_dir)
 
-        product = producers[ip].run(**inputs)
-        record[pname] = product
+        class ProducerThread(threading.Thread):
+            def __init__(self):
+                threading.Thread.__init__(self)
 
-        if producers[ip].cache:
-            size = save(product, pname, cache_dir)
-            print("Caching product {0}: {1}".format(pname, humanbytes(size)))
+            def run(self):
+                product = producer.run(**inputs)
 
-        if pname in target_products:
-            size = save(product, pname, out_dir)
-            print("Saving output {0}: {1}".format(pname, humanbytes(size)))
+                # time.sleep(2)
 
-        requirements = get_all_requirements(exec_order[i + 1 :], producers)
+                record[pname] = product
 
-        for key in list(record.keys()):
-            if key not in requirements:
-                del record[key]
+                if producer.cache:
+                    size = save(product, pname, cache_dir)
+                    print("Caching product {0}: {1}".format(pname, humanbytes(size)))
+
+                if pname in target_products:
+                    size = save(product, pname, out_dir)
+                    print("Saving output {0}: {1}".format(pname, humanbytes(size)))
+
+
+
+        t = ProducerThread()
+        t.start()
+
+
+    # Loop over producers needed to get to the desired output products
+    while exec_order:
+
+        for i, ip in enumerate(exec_order):
+
+            requirements = producers[ip].expand_full_requires(flatten=True)
+
+            requirements_available = True
+            for x in requirements:
+                if x not in record.keys():
+                    requirements_available = False
+                    break
+
+            if not requirements_available:
+                continue
+
+            run_producer(producers[ip])
+
+            exec_order.pop(i)
+
+            requirements_all = []
+            for i, producer in enumerate(producers):
+                if i in exec_order:
+                    requirements_all += producer.expand_full_requires(flatten=True)
+
+            for key in list(record.keys()):
+                if key not in requirements_all:
+                    del record[key]
 
     return record
