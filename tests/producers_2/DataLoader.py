@@ -1,4 +1,4 @@
-from geeksw.core import produces, requires
+from geeksw.framework import produces, consumes
 
 import numpy as np
 import os.path

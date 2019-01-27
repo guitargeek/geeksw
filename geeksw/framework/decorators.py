@@ -18,7 +18,7 @@ def produces(*product_names):
         return producer_func
     return wrapper
 
-def requires(**requirements):
+def consumes(**requirements):
     def wrapper(func):
         @functools.wraps(func)
         def producer_func(**inputs):

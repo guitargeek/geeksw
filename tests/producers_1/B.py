@@ -1,8 +1,8 @@
-from geeksw.core import produces, requires
+from geeksw.framework import produces, consumes
 
 
 @produces("jenkins")
-@requires(foo="foo")
+@consumes(foo="foo")
 def produce(foo):
 
     return foo + "Jenkins"

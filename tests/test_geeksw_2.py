@@ -1,5 +1,5 @@
 import unittest
-from geeksw.core import geek_run
+from geeksw.framework import geek_run
 import os.path
 
 

@@ -1,11 +1,11 @@
-from geeksw.core import produces, requires
+from geeksw.framework import produces, consumes
 
 import numpy as np
 import matplotlib.pyplot as plt
 
 
 @produces("plot")
-@requires(x="*/x")
+@consumes(x="*/x")
 def run(x):
 
     plt.figure()
