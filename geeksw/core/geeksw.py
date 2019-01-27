@@ -95,8 +95,6 @@ import re
 class ProductMatch(object):
     def __init__(self, product, producer):
 
-        print(producer.product)
-
         regex = re.sub("<[^<>]*>", "[^/]*", producer.product)
         match = re.match(".*" + regex + "$", product)
 
@@ -129,9 +127,6 @@ import numpy as np
 
 
 def get_required_producers(product, producer_funcs, out_dir):
-
-    print(product)
-    print([p.product for p in producer_funcs])
 
     n = len(producer_funcs)
     matches = list(map(lambda P: ProductMatch(product, P), producer_funcs))
@@ -224,11 +219,7 @@ def geek_run(config):
             producers[ip].input_names, producers[ip].full_requires_expanded
         ):
             if len(full_req) > 1:
-                inputs[req] = []
-                for x in full_req:
-                    n = req.count("/")
-                    short_name = "/".join(x.split("/")[-n - 1 :])
-                    inputs[req].append((short_name, record[x]))
+                inputs[req] = [(x, record[x]) for x in full_req]
             else:
                 inputs[req] = record[full_req[0]]
 
