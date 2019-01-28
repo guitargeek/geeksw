@@ -1,13 +1,8 @@
-import hashlib
+import os
 
-
-def hash_file(path):
-    hasher = hashlib.md5()
-    with open(path, "rb") as afile:
-        buf = afile.read()
-        hasher.update(buf)
-    return hasher.hexdigest()
-
+def mkdir(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 def humanbytes(B):
     "Return the given bytes as a human friendly KB, MB, GB, or TB string"

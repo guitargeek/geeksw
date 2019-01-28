@@ -8,7 +8,7 @@ class Particles(TableWrapper):
 
         mask = ~(
             (phi_combs.i1 - phi_combs.i0) ** 2 + (eta_combs.i1 - eta_combs.i0) ** 2
-            < delta_r
+            < delta_r ** 2
         ).any()
 
         return self[mask]

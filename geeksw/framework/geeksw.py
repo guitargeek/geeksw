@@ -11,17 +11,20 @@ from .Plot import Plot
 from .Producers import Producer as GeekProducer
 from .Producers import expand_wildcard
 
+from ..data_formats import Particles
+
+from types import FunctionType
+
+import awkward
+import h5py
+
+awkward.persist.whitelist = awkward.persist.whitelist + [[u'awkward', u'Particles', u'frompairs']]
 
 class MetaInfo(object):
 
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
-
-
-def mkdir(path):
-    if not os.path.exists(path):
-        os.makedirs(path)
 
 
 class Dataset(object):
@@ -63,7 +66,7 @@ def get_producer_funcs(producers_path):
                 continue
             file_path = os.path.join(producers_path, file_name)
             producer_funcs.append(func)
-            hashes += hash_file(file_path)
+            hashes.append(func._orig_code_hash)
     del file_name
 
     return producer_funcs
@@ -80,12 +83,26 @@ def save(obj, name, path):
     if type(obj) == Plot:
         return obj.save(path, name)
 
-    # If there is no special rule, just pickle
-    file_name = os.path.join(path, name + ".pkl")
-    mkdir(os.path.dirname(file_name))
-    with open(file_name, "wb") as f:
-        pickle.dump(obj, f)
-    return os.path.getsize(file_name)
+    # Saving JaggedArray stuff
+    if type(obj) == Particles:
+        file_name = os.path.join(path, name + ".h5")
+        mkdir(os.path.dirname(file_name))
+        with h5py.File(file_name, "w") as hf:
+            ah5 = awkward.hdf5(hf)
+            ah5["product"] = obj.table()
+
+        return os.path.getsize(file_name)
+
+    # If there is no special rule, just try to pickle
+    try:
+        file_name = os.path.join(path, name + ".pkl")
+        mkdir(os.path.dirname(file_name))
+        with open(file_name, "wb") as f:
+            pickle.dump(obj, f)
+        return os.path.getsize(file_name)
+    except pickle.PicklingError as e:
+        print("Product "+name+" could not be pickled.")
+        return -1
 
 
 import re
@@ -171,7 +188,7 @@ def geek_run(config):
     producers_path = config.producers
     target_products = config.products
 
-    cache_dir = config.cache_dir if hasattr(config, "cache_dir") else "cache"
+    cache_dir = config.cache_dir if hasattr(config, "cache_dir") else ".geeksw_cache"
     out_dir = config.out_dir if hasattr(config, "out_dir") else "output"
 
     # Create list of dataset instances from configuration tuples
@@ -181,6 +198,10 @@ def geek_run(config):
     os.system("rm -rf " + out_dir)  # Delete previous output to not confuse glob
     for ds in datasets:
         mkdir(os.path.join(out_dir, "." + ds.geeksw_path))
+
+    # Create the cache dir structure
+    for ds in datasets:
+        mkdir(os.path.join(cache_dir, "." + ds.geeksw_path))
 
     producer_funcs = get_producer_funcs(producers_path)
     producers = []
@@ -230,19 +251,37 @@ def geek_run(config):
                 threading.Thread.__init__(self)
 
             def run(self):
-                product = producer.run(**inputs)
 
-                # time.sleep(2)
+                cache_file_name = os.path.join(cache_dir, pname + ".pkl")
+                if os.path.isfile(cache_file_name):
+                    record[pname] = pickle.load(open(cache_file_name, "rb"))
+                    return
+
+                cache_file_name = os.path.join(cache_dir, pname + ".h5")
+                if os.path.isfile(cache_file_name):
+                    with h5py.File(cache_file_name) as hf:
+                        ah5 = awkward.hdf5(hf)
+                        record[pname] = Particles.fromtable(ah5["product"])
+                    return
+
+                start_time = time.time()
+
+                product = producer.run(**inputs)
 
                 record[pname] = product
 
-                if producer.cache:
-                    size = save(product, pname, cache_dir)
-                    print("Caching product {0}: {1}".format(pname, humanbytes(size)))
+                elapsed_time = time.time() - start_time
 
                 if pname in target_products:
                     size = save(product, pname, out_dir)
-                    print("Saving output {0}: {1}".format(pname, humanbytes(size)))
+                    print("Saved output {0}: {1}".format(pname, humanbytes(size)))
+                    return
+
+                if elapsed_time > 2:
+                    print("Pruducer time longer than 2 seconds, caching product...")
+                    size = save(product, pname, cache_dir)
+                    if size > 0:
+                       print("Cached product {0}: {1}".format(pname, humanbytes(size)))
 
 
 

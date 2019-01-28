@@ -10,11 +10,11 @@ def produces(*product_names):
         @functools.wraps(func)
         def producer_func(**inputs):
             return func(**inputs)
-        setattr(producer_func, "product", product_name)
-        if not hasattr(producer_func, "requirements"):
-            setattr(producer_func, "requirements", {})
+        producer_func.product = product_name
         is_template = "<" in product_name or ">" in product_name
-        setattr(producer_func, "_is_template", is_template)
+        producer_func._is_template = is_template
+        if not hasattr(producer_func, "_orig_code_hash"):
+            producer_func._orig_code_hash = hash(func.__code__)
         return producer_func
     return wrapper
 
@@ -23,6 +23,8 @@ def consumes(**requirements):
         @functools.wraps(func)
         def producer_func(**inputs):
             return func(**inputs)
-        setattr(producer_func, "requirements", requirements)
+        producer_func.requirements = requirements
+        if not hasattr(producer_func, "_orig_code_hash"):
+            producer_func._orig_code_hash = hash(func.__code__)
         return producer_func
     return wrapper

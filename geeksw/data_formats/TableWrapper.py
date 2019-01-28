@@ -27,6 +27,23 @@ class TableWrapper(awkward.Table):
 
         return cls(**data)
 
+    @classmethod
+    def fromtable(cls, table):
+        new = cls()
+        new._view = table._view
+        new._base = table._base
+        new._rowname = table._rowname
+        new._contents = table._contents
+        return new
+
+    def table(self):
+        out = awkward.Table()
+        out._view = self._view
+        out._base = self._base
+        out._rowname = self._rowname
+        out._contents = self._contents
+        return out
+
     def __getitem__(self, where):
 
         if isinstance(where, np.ndarray):
@@ -46,4 +63,4 @@ class TableWrapper(awkward.Table):
         for key, x in self._contents.items():
             data[key] = x[mask]
 
-        return TableWrapper(**data)
+        return type(self)(**data)
