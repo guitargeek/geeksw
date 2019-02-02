@@ -2,42 +2,47 @@ import unittest
 import geeksw.framework as fwk
 import uproot
 import awkward
+import time
 
 # Declare producers for this test
 
 @fwk.global_to_stream
-@fwk.produces("data")
-def DataLoader():
+@fwk.produces("trees")
+def load_tree():
 
     trees = [uproot.open(f"./datasets/WWZ/nano_{i}.root")["Events"] for i in range(4)]
 
     print("Total number of events:")
     print(sum([len(t) for t in trees]))
 
-    return [t.array("Electron_pt") for t in trees]
+    return trees
 
 
 @fwk.stream_to_stream
-@fwk.produces("calculation")
-@fwk.consumes(data="data")
-def Calculator(data):
+@fwk.produces("data")
+@fwk.consumes(trees="trees")
+def load_branch(trees):
 
+    time.sleep(3)
+    
+    data = trees.array("Electron_pt")
     print("Calculator got data of length {0}".format(len(data)))
+
     return data
 
 
 @fwk.stream_to_global(awkward.JaggedArray.concatenate)
 @fwk.produces("merged")
-@fwk.consumes(calculation="calculation")
-def Merger(calculation):
+@fwk.consumes(data="data")
+def merge_branch(data):
 
-    return calculation
+    return data
 
 
 producers = [
-        DataLoader,
-        Calculator,
-        Merger,
+        load_tree,
+        load_branch,
+        merge_branch,
         ]
 
 

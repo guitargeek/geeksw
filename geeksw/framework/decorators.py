@@ -39,6 +39,7 @@ def consumes(**requirements):
         return producer_func
     return wrapper
 
+
 def identity_wrapper(func):
     @functools.wraps(func)
     def producer_func(**inputs):

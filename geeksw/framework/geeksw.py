@@ -22,10 +22,16 @@ import parsl
 # from parsl.app.app import python_app, bash_app
 from parsl.configs.local_threads import config
 
+import glob
+
 
 parsl.load(config)
 
+
 awkward.persist.whitelist = awkward.persist.whitelist + [[u'awkward', u'Particles', u'frompairs']]
+
+
+cache_dir = ".geeksw_cache"
 
 
 class FuturesDummy(object):
@@ -38,6 +44,23 @@ class MetaInfo(object):
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
+
+
+def get_from_cache(product):
+
+    filename = product.replace("/", "__")
+
+    cache_file_name = os.path.join(cache_dir, filename + ".pkl")
+    if os.path.isfile(cache_file_name):
+        return pickle.load(open(cache_file_name, "rb"))
+
+    cache_file_name = os.path.join(cache_dir, filename + ".h5")
+    if os.path.isfile(cache_file_name):
+        with h5py.File(cache_file_name) as hf:
+            ah5 = awkward.hdf5(hf)
+            return Particles.fromtable(ah5["product"])
+
+    raise ValueError(f"Product {product} not found in cache!")
 
 
 def load_module(name, path_to_file):
@@ -84,12 +107,13 @@ def get_exec_order(producers):
     return graph.toposort()
 
 
-def save(obj, name, path):
+def cache(obj, name):
+
+    name = name.replace("/", "__")
 
     # Saving JaggedArray stuff
     if type(obj) == Particles:
         file_name = os.path.join(path, name + ".h5")
-        mkdir(os.path.dirname(file_name))
         with h5py.File(file_name, "w") as hf:
             ah5 = awkward.hdf5(hf)
             ah5["product"] = obj.table()
@@ -99,7 +123,6 @@ def save(obj, name, path):
     # If there is no special rule, just try to pickle
     try:
         file_name = os.path.join(path, name + ".pkl")
-        mkdir(os.path.dirname(file_name))
         with open(file_name, "wb") as f:
             pickle.dump(obj, f)
         return os.path.getsize(file_name)
@@ -139,7 +162,12 @@ class ProductMatch(object):
                 self.subs[t] = s
 
 
-def get_required_producers(product, producer_funcs, datasets):
+def get_required_producers(product, producer_funcs, datasets, record):
+
+    cache_file_wo_suffix = os.path.join(cache_dir, product.replace("/", "__"))
+    if glob.glob(cache_file_wo_suffix + "*"):
+        record[product] = get_from_cache(product)
+        return []
 
     n = len(producer_funcs)
     matches = list(map(lambda P: ProductMatch(product, P), producer_funcs))
@@ -154,18 +182,21 @@ def get_required_producers(product, producer_funcs, datasets):
     producers = [GeekProducer(producer_funcs[i], matches[i].subs, working_dir, datasets)]
 
     for i, req in enumerate(producers[0].expand_full_requires(flatten=True)):
-        producers += get_required_producers(req, producer_funcs, datasets)
+        producers += get_required_producers(req, producer_funcs, datasets, record)
 
     return producers
 
 
-def produce(products=None, producers=[], datasets=None, cache_dir="__geeksw_cache__"):
+def produce(products=None,
+            producers=[],
+            datasets=None,
+            cache_time=2,
+    ):
 
     target_products = products
 
     # Create the cache dir structure
-    for ds in datasets:
-        mkdir(os.path.join(cache_dir, "." + ds))
+    mkdir(cache_dir)
 
     if type(producers) == str:
         producer_funcs = load_producers(producers)
@@ -177,8 +208,10 @@ def produce(products=None, producers=[], datasets=None, cache_dir="__geeksw_cach
     target_products = [expand_wildcard(t[1:], datasets) for t in target_products]
     target_products = [y for x in target_products for y in x]
 
+    record = {}
+
     for t in target_products:
-        producers += get_required_producers(t, producer_funcs, datasets)
+        producers += get_required_producers(t, producer_funcs, datasets, record)
     producers = list(set(producers))
 
     exec_order = get_exec_order(producers)
@@ -192,8 +225,6 @@ def produce(products=None, producers=[], datasets=None, cache_dir="__geeksw_cach
                 + ["->", producers[ip].product]
             )
         )
-
-    record = {}
 
     def run_producer(producer):
 
@@ -216,6 +247,8 @@ def produce(products=None, producers=[], datasets=None, cache_dir="__geeksw_cach
 
     launched = [[False] for i in range(len(producers))]
     futures = [FuturesDummy() for i in range(len(producers))]
+    start_times = [None] * len(producers)
+    elapsed_times = [None] * len(producers)
 
     # Loop over producers needed to get to the desired output products
     while exec_order:
@@ -236,11 +269,22 @@ def produce(products=None, producers=[], datasets=None, cache_dir="__geeksw_cach
             if not launched[ip][0]:
                 futures[ip] = run_producer(producers[ip])
                 launched[ip][0] = True
+                start_times[ip] = time.time()
 
             if not futures[ip].done():
                 continue
 
+            elapsed_times[ip] = time.time() - start_times[ip]
+            start_times[ip] = None
+
             record[producers[ip].full_product] = futures[ip].result()
+
+            if elapsed_times[ip] > cache_time:
+                print("Pruducer time longer than 2 seconds, caching product...")
+                pname = producers[ip].full_product
+                size = cache(record[pname], pname)
+                if size > 0:
+                   print("Cached product {0}: {1}".format(pname, humanbytes(size)))
 
             exec_order.pop(i)
 
@@ -254,25 +298,3 @@ def produce(products=None, producers=[], datasets=None, cache_dir="__geeksw_cach
                     del record[key]
 
     return record
-
-
-                # cache_file_name = os.path.join(cache_dir, pname + ".pkl")
-                # if os.path.isfile(cache_file_name):
-                    # record[pname] = pickle.load(open(cache_file_name, "rb"))
-                    # return
-
-                # cache_file_name = os.path.join(cache_dir, pname + ".h5")
-                # if os.path.isfile(cache_file_name):
-                    # with h5py.File(cache_file_name) as hf:
-                        # ah5 = awkward.hdf5(hf)
-                        # record[pname] = Particles.fromtable(ah5["product"])
-                    # return
-
-
-
-                # if elapsed_time > 2:
-                    # print("Pruducer time longer than 2 seconds, caching product...")
-                    # size = save(product, pname, cache_dir)
-                    # if size > 0:
-                       # print("Cached product {0}: {1}".format(pname, humanbytes(size)))
-
