@@ -208,6 +208,8 @@ def produce(products=None, producers=[], datasets=None, cache_dir="__geeksw_cach
 
         return producer.run(**inputs)
 
+    launched = np.zeros(len(producers), dtype=np.bool)
+
     # Loop over producers needed to get to the desired output products
     while exec_order:
 
@@ -224,7 +226,9 @@ def produce(products=None, producers=[], datasets=None, cache_dir="__geeksw_cach
             if not requirements_available:
                 continue
 
-            product = run_producer(producers[ip])
+            if not launched[ip]:
+                product = run_producer(producers[ip])
+                launched[ip] = True
 
             if not product.done():
                 continue

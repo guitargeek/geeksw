@@ -23,6 +23,7 @@ def produces(*product_names):
         return producer_func
     return wrapper
 
+
 def consumes(**requirements):
     def wrapper(func):
         @functools.wraps(func)
@@ -35,3 +36,22 @@ def consumes(**requirements):
         producer_func.requirements = requirements
         return producer_func
     return wrapper
+
+
+def set_producer_type(producer_type):
+    def wrapper(func):
+        @functools.wraps(func)
+        def producer_func(**inputs):
+            return func(**inputs)
+
+        if not hasattr(producer_func, "producer_type"):
+            producer_func.producer_type = producer_type
+
+        return producer_func
+    return wrapper
+
+
+global_to_stream = set_producer_type("global_to_stream")
+global_to_global = set_producer_type("global_to_global")
+stream_to_stream = set_producer_type("stream_to_stream")
+stream_to_global = set_producer_type("stream_to_global")
