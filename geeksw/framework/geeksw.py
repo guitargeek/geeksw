@@ -3,6 +3,8 @@ import os
 import pickle
 import inspect
 import time
+import numpy as np
+import re
 
 from .helpers import *
 from .DependencyGraph import DependencyGraph
@@ -21,6 +23,7 @@ import parsl
 # from parsl.app.app import python_app, bash_app
 from parsl.configs.local_threads import config
 
+
 parsl.load(config)
 
 awkward.persist.whitelist = awkward.persist.whitelist + [[u'awkward', u'Particles', u'frompairs']]
@@ -30,12 +33,6 @@ class MetaInfo(object):
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
-
-
-class Dataset(object):
-    def __init__(self, file_path, geeksw_path):
-        self.file_path = file_path
-        self.geeksw_path = geeksw_path
 
 
 def load_module(name, path_to_file):
@@ -84,10 +81,6 @@ def get_exec_order(producers):
 
 def save(obj, name, path):
 
-    # How to save matplotlib plots
-    if type(obj) == Plot:
-        return obj.save(path, name)
-
     # Saving JaggedArray stuff
     if type(obj) == Particles:
         file_name = os.path.join(path, name + ".h5")
@@ -108,9 +101,6 @@ def save(obj, name, path):
     except pickle.PicklingError as e:
         print("Product "+name+" could not be pickled.")
         return -1
-
-
-import re
 
 
 class ProductMatch(object):
@@ -144,9 +134,6 @@ class ProductMatch(object):
                 self.subs[t] = s
 
 
-import numpy as np
-
-
 def get_required_producers(product, producer_funcs, datasets):
 
     n = len(producer_funcs)
@@ -173,12 +160,9 @@ def produce(products=None, producer_dir=".", datasets=None):
 
     cache_dir = config.cache_dir if hasattr(config, "cache_dir") else "__geeksw_cache__"
 
-    # Create list of dataset instances from configuration tuples
-    datasets = [Dataset(*args) for args in datasets]
-
     # Create the cache dir structure
     for ds in datasets:
-        mkdir(os.path.join(cache_dir, "." + ds.geeksw_path))
+        mkdir(os.path.join(cache_dir, "." + ds))
 
     producer_funcs = get_producer_funcs(producer_dir)
     producers = []

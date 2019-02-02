@@ -10,7 +10,7 @@ def path_product(p1, p2):
 def expand_wildcard(product, datasets):
     if not "*" in product:
         return [product]
-    return [product.replace("*", ds.geeksw_path) for ds in datasets]
+    return [product.replace("*", ds) for ds in datasets]
 
 
 class Producer(object):
