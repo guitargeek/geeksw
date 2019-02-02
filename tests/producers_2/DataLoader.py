@@ -7,5 +7,5 @@ import os.path
 @produces("<dataset>/x")
 def run(meta):
 
-    path = os.path.join("datasets", meta.subs["<dataset>"], "data.npy")
+    path = os.path.join("datasets/random_numbers", meta.subs["<dataset>"], "data.npy")
     return np.load(path)
