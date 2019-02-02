@@ -1,4 +1,4 @@
-from geeksw.framework import produces, consumes
+from geeksw.framework import produces
 
 
 @produces("foo")

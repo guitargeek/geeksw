@@ -2,7 +2,6 @@ import sys
 import os
 import pickle
 import inspect
-import threading
 import time
 
 from .helpers import *
@@ -17,6 +16,12 @@ from types import FunctionType
 
 import awkward
 import h5py
+
+import parsl
+# from parsl.app.app import python_app, bash_app
+from parsl.configs.local_threads import config
+
+parsl.load(config)
 
 awkward.persist.whitelist = awkward.persist.whitelist + [[u'awkward', u'Particles', u'frompairs']]
 
@@ -66,7 +71,7 @@ def get_producer_funcs(producers_path):
                 continue
             file_path = os.path.join(producers_path, file_name)
             producer_funcs.append(func)
-            hashes.append(func._orig_code_hash)
+            hashes.append(func.func_hash)
     del file_name
 
     return producer_funcs
@@ -234,60 +239,17 @@ def geek_run(config):
 
         working_dir = producer.working_dir
         inputs = {}
-        for req, full_req in zip(
-            producer.input_names, producer.full_requires_expanded
-        ):
+        for req, full_req in zip(producer.input_names, producer.full_requires_expanded):
             if len(full_req) > 1:
                 inputs[req] = [(x, record[x]) for x in full_req]
             else:
                 inputs[req] = record[full_req[0]]
 
-        if producer.run._is_template:
+        if producer.run.is_template:
             inputs["meta"] = MetaInfo(subs = producer.subs,
                                       working_dir = producer.working_dir)
 
-        class ProducerThread(threading.Thread):
-            def __init__(self):
-                threading.Thread.__init__(self)
-
-            def run(self):
-
-                cache_file_name = os.path.join(cache_dir, pname + ".pkl")
-                if os.path.isfile(cache_file_name):
-                    record[pname] = pickle.load(open(cache_file_name, "rb"))
-                    return
-
-                cache_file_name = os.path.join(cache_dir, pname + ".h5")
-                if os.path.isfile(cache_file_name):
-                    with h5py.File(cache_file_name) as hf:
-                        ah5 = awkward.hdf5(hf)
-                        record[pname] = Particles.fromtable(ah5["product"])
-                    return
-
-                start_time = time.time()
-
-                product = producer.run(**inputs)
-
-                record[pname] = product
-
-                elapsed_time = time.time() - start_time
-
-                if pname in target_products:
-                    size = save(product, pname, out_dir)
-                    print("Saved output {0}: {1}".format(pname, humanbytes(size)))
-                    return
-
-                if elapsed_time > 2:
-                    print("Pruducer time longer than 2 seconds, caching product...")
-                    size = save(product, pname, cache_dir)
-                    if size > 0:
-                       print("Cached product {0}: {1}".format(pname, humanbytes(size)))
-
-
-
-        t = ProducerThread()
-        t.start()
-
+        return producer.run(**inputs)
 
     # Loop over producers needed to get to the desired output products
     while exec_order:
@@ -305,7 +267,12 @@ def geek_run(config):
             if not requirements_available:
                 continue
 
-            run_producer(producers[ip])
+            product = run_producer(producers[ip])
+
+            if not product.done():
+                continue
+
+            record[producers[ip].full_product] = product.result()
 
             exec_order.pop(i)
 
@@ -319,3 +286,34 @@ def geek_run(config):
                     del record[key]
 
     return record
+
+
+                # cache_file_name = os.path.join(cache_dir, pname + ".pkl")
+                # if os.path.isfile(cache_file_name):
+                    # record[pname] = pickle.load(open(cache_file_name, "rb"))
+                    # return
+
+                # cache_file_name = os.path.join(cache_dir, pname + ".h5")
+                # if os.path.isfile(cache_file_name):
+                    # with h5py.File(cache_file_name) as hf:
+                        # ah5 = awkward.hdf5(hf)
+                        # record[pname] = Particles.fromtable(ah5["product"])
+                    # return
+
+
+
+
+
+
+
+                # if pname in target_products:
+                    # size = save(product, pname, out_dir)
+                    # print("Saved output {0}: {1}".format(pname, humanbytes(size)))
+                    # return
+
+                # if elapsed_time > 2:
+                    # print("Pruducer time longer than 2 seconds, caching product...")
+                    # size = save(product, pname, cache_dir)
+                    # if size > 0:
+                       # print("Cached product {0}: {1}".format(pname, humanbytes(size)))
+

@@ -11,9 +11,9 @@ class GeekswTests(unittest.TestCase):
         record = geek_run(
             """
 datasets = [
-            ("datasets/data1", "/data1"),
-            ("datasets/data2", "/data2"),
-            ("datasets/data3", "/data3"),
+            ("datasets/random_numbers/data1", "/data1"),
+            ("datasets/random_numbers/data2", "/data2"),
+            ("datasets/random_numbers/data3", "/data3"),
            ]
 producers = "producers_1"
 products  = ["/*/win/win"]

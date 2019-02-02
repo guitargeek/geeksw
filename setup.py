@@ -13,5 +13,5 @@ setup(
     entry_points={"console_scripts": ["geekRun=geeksw.geekRun:__main__"]},
     include_package_data=True,
     zip_safe=False,
-    install_requires=["numpy", "matplotlib", "jagged"],
+    install_requires=["numpy", "matplotlib", "jagged", "parsl"],
 )

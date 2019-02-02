@@ -1,4 +1,5 @@
 import functools
+from parsl.app.app import python_app
 
 def produces(*product_names):
 
@@ -10,11 +11,15 @@ def produces(*product_names):
         @functools.wraps(func)
         def producer_func(**inputs):
             return func(**inputs)
+
+        if not hasattr(producer_func, "func_hash"):
+            producer_func = python_app(producer_func)
+
         producer_func.product = product_name
         is_template = "<" in product_name or ">" in product_name
-        producer_func._is_template = is_template
-        if not hasattr(producer_func, "_orig_code_hash"):
-            producer_func._orig_code_hash = hash(func.__code__)
+        producer_func.is_template = is_template
+        if not hasattr(producer_func, "requirements"):
+            producer_func.requirements = {}
         return producer_func
     return wrapper
 
@@ -23,8 +28,10 @@ def consumes(**requirements):
         @functools.wraps(func)
         def producer_func(**inputs):
             return func(**inputs)
+
+        if not hasattr(producer_func, "func_hash"):
+            producer_func = python_app(producer_func)
+
         producer_func.requirements = requirements
-        if not hasattr(producer_func, "_orig_code_hash"):
-            producer_func._orig_code_hash = hash(func.__code__)
         return producer_func
     return wrapper
