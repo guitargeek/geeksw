@@ -8,7 +8,6 @@ import re
 
 from .helpers import *
 from .DependencyGraph import DependencyGraph
-from .Plot import Plot
 from .Producers import Producer as GeekProducer
 from .Producers import expand_wildcard
 
@@ -53,7 +52,7 @@ def load_module(name, path_to_file):
         return module
 
 
-def get_producer_funcs(producers_path):
+def load_producers(producers_path):
     producer_funcs = []
     hashes = []  # file hashes to track changes
 
@@ -154,17 +153,19 @@ def get_required_producers(product, producer_funcs, datasets):
     return producers
 
 
-def produce(products=None, producer_dir=".", datasets=None):
+def produce(products=None, producers=[], datasets=None, cache_dir="__geeksw_cache__"):
 
     target_products = products
-
-    cache_dir = config.cache_dir if hasattr(config, "cache_dir") else "__geeksw_cache__"
 
     # Create the cache dir structure
     for ds in datasets:
         mkdir(os.path.join(cache_dir, "." + ds))
 
-    producer_funcs = get_producer_funcs(producer_dir)
+    if type(producers) == str:
+        producer_funcs = load_producers(producers)
+    else:
+        producer_funcs = producers
+
     producers = []
 
     target_products = [expand_wildcard(t[1:], datasets) for t in target_products]
