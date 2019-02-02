@@ -53,5 +53,15 @@ def set_producer_type(producer_type):
 
 global_to_stream = set_producer_type("global_to_stream")
 global_to_global = set_producer_type("global_to_global")
-stream_to_stream = set_producer_type("stream_to_stream")
 stream_to_global = set_producer_type("stream_to_global")
+
+
+def stream_to_stream(func):
+    @functools.wraps(func)
+    def producer_func(**inputs):
+        n = len(next(iter(inputs.values())))
+        streamed_inputs = [{k : v[i] for k, v in inputs.items()} for i in range(n)]
+        res = [func(**streamed_inputs[i]) for i in range(n)]
+        return res
+
+    return producer_func

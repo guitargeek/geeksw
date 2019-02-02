@@ -27,6 +27,33 @@ parsl.load(config)
 
 awkward.persist.whitelist = awkward.persist.whitelist + [[u'awkward', u'Particles', u'frompairs']]
 
+
+class FuturesDummy(object):
+    def done(self):
+        return False
+
+class MultiFuture(object):
+
+    def __init__(self, futures):
+        if hasattr(futures, "__len__"):
+            self.futures = futures
+
+        else:
+            self.futures = [futures]
+
+    def done(self):
+        for f in self.futures:
+            if not f.done():
+                return False
+
+        return True
+
+    def result(self):
+        if len(self.futures) == 1:
+            return self.futures[0].result()
+        return [f.result() for f in self.futures]
+
+
 class MetaInfo(object):
 
     def __init__(self, **kwargs):
@@ -208,7 +235,8 @@ def produce(products=None, producers=[], datasets=None, cache_dir="__geeksw_cach
 
         return producer.run(**inputs)
 
-    launched = np.zeros(len(producers), dtype=np.bool)
+    launched = [[False] for i in range(len(producers))]
+    futures = [FuturesDummy() for i in range(len(producers))]
 
     # Loop over producers needed to get to the desired output products
     while exec_order:
@@ -226,14 +254,14 @@ def produce(products=None, producers=[], datasets=None, cache_dir="__geeksw_cach
             if not requirements_available:
                 continue
 
-            if not launched[ip]:
-                product = run_producer(producers[ip])
-                launched[ip] = True
+            if not launched[ip][0]:
+                futures[ip] = MultiFuture(run_producer(producers[ip]))
+                launched[ip][0] = True
 
-            if not product.done():
+            if not futures[ip].done():
                 continue
 
-            record[producers[ip].full_product] = product.result()
+            record[producers[ip].full_product] = futures[ip].result()
 
             exec_order.pop(i)
 
