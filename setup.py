@@ -10,7 +10,6 @@ setup(
     author_email="jonas.rembser@cern.ch",
     license="MIT",
     packages=find_packages(),
-    entry_points={"console_scripts": ["geekRun=geeksw.geekRun:__main__"]},
     include_package_data=True,
     zip_safe=False,
     install_requires=["numpy", "matplotlib", "jagged", "parsl"],

@@ -7,13 +7,10 @@ def path_product(p1, p2):
     return [os.path.join(*x) for x in itertools.product(p1, p2)]
 
 
-def expand_wildcard(product, out_dir):
+def expand_wildcard(product, datasets):
     if not "*" in product:
         return [product]
-    i = product[::-1].find("*")
-    wildcard_expr = os.path.join(out_dir, product[:-i])
-    rest = product[-i:]
-    return [path[len(out_dir) + 1 :] + rest for path in glob.glob(wildcard_expr)]
+    return [product.replace("*", ds.geeksw_path) for ds in datasets]
 
 
 class Producer(object):
@@ -22,12 +19,12 @@ class Producer(object):
     cache = False
 
     def expand_full_requires(self, flatten=False):
-        expanded = [expand_wildcard(req, self.out_dir) for req in self.full_requires]
+        expanded = [expand_wildcard(req, self.datasets) for req in self.full_requires]
         if flatten:
             return [y for x in expanded for y in x]
         return expanded
 
-    def __init__(self, func, subs, working_dir, out_dir):
+    def __init__(self, func, subs, working_dir, datasets):
 
         self.product = func.product
         self.input_names = func.requirements.keys()
@@ -46,7 +43,7 @@ class Producer(object):
         self.requires = [replace_from_dict(req, subs) for req in self.requires]
 
         self.working_dir = working_dir
-        self.out_dir = out_dir
+        self.datasets = datasets
 
         self.full_product = self.working_dir + self.product
         self.full_requires = [self.working_dir + req for req in self.requires]

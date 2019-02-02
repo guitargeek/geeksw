@@ -147,7 +147,7 @@ class ProductMatch(object):
 import numpy as np
 
 
-def get_required_producers(product, producer_funcs, out_dir):
+def get_required_producers(product, producer_funcs, datasets):
 
     n = len(producer_funcs)
     matches = list(map(lambda P: ProductMatch(product, P), producer_funcs))
@@ -159,63 +159,35 @@ def get_required_producers(product, producer_funcs, out_dir):
     i = np.argmax(scores)
 
     working_dir = product[: -len(matches[i].group)]
-    producers = [GeekProducer(producer_funcs[i], matches[i].subs, working_dir, out_dir)]
+    producers = [GeekProducer(producer_funcs[i], matches[i].subs, working_dir, datasets)]
 
     for i, req in enumerate(producers[0].expand_full_requires(flatten=True)):
-        producers += get_required_producers(req, producer_funcs, out_dir)
+        producers += get_required_producers(req, producer_funcs, datasets)
 
     return producers
 
 
-def geek_run(config):
+def produce(products=None, producer_dir=".", datasets=None):
 
-    try:
-        # Try to open the file to see if it's a valid file path
-        with open(config, "r") as f:
-            pass
-    except:
-        # If the passed config was not a file, maybe if was a string that is
-        # supposed to be the content of the config...
-        import tempfile
-        import subprocess
+    target_products = products
 
-        new_file, filename = tempfile.mkstemp()
-
-        os.write(new_file, str.encode(config))
-        os.close(new_file)
-
-        subprocess.call(["mv", filename, filename + ".py"])
-
-        config = filename + ".py"
-
-    config = load_module("config", config)
-
-    producers_path = config.producers
-    target_products = config.products
-
-    cache_dir = config.cache_dir if hasattr(config, "cache_dir") else ".geeksw_cache"
-    out_dir = config.out_dir if hasattr(config, "out_dir") else "output"
+    cache_dir = config.cache_dir if hasattr(config, "cache_dir") else "__geeksw_cache__"
 
     # Create list of dataset instances from configuration tuples
-    datasets = [Dataset(*args) for args in config.datasets]
-
-    # Create the output dir structure
-    os.system("rm -rf " + out_dir)  # Delete previous output to not confuse glob
-    for ds in datasets:
-        mkdir(os.path.join(out_dir, "." + ds.geeksw_path))
+    datasets = [Dataset(*args) for args in datasets]
 
     # Create the cache dir structure
     for ds in datasets:
         mkdir(os.path.join(cache_dir, "." + ds.geeksw_path))
 
-    producer_funcs = get_producer_funcs(producers_path)
+    producer_funcs = get_producer_funcs(producer_dir)
     producers = []
 
-    target_products = [expand_wildcard(t[1:], out_dir) for t in target_products]
+    target_products = [expand_wildcard(t[1:], datasets) for t in target_products]
     target_products = [y for x in target_products for y in x]
 
     for t in target_products:
-        producers += get_required_producers(t, producer_funcs, out_dir)
+        producers += get_required_producers(t, producer_funcs, datasets)
     producers = list(set(producers))
 
     exec_order = get_exec_order(producers)
@@ -282,7 +254,7 @@ def geek_run(config):
                     requirements_all += producer.expand_full_requires(flatten=True)
 
             for key in list(record.keys()):
-                if key not in requirements_all:
+                if key not in requirements_all and key not in target_products:
                     del record[key]
 
     return record
@@ -301,15 +273,6 @@ def geek_run(config):
                     # return
 
 
-
-
-
-
-
-                # if pname in target_products:
-                    # size = save(product, pname, out_dir)
-                    # print("Saved output {0}: {1}".format(pname, humanbytes(size)))
-                    # return
 
                 # if elapsed_time > 2:
                     # print("Pruducer time longer than 2 seconds, caching product...")
