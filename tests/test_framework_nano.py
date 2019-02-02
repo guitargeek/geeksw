@@ -26,17 +26,12 @@ def Calculator(data):
     return data
 
 
-@fwk.stream_to_global
+@fwk.stream_to_global(awkward.JaggedArray.concatenate)
 @fwk.produces("merged")
 @fwk.consumes(calculation="calculation")
 def Merger(calculation):
 
-    merged = awkward.JaggedArray.concatenate(calculation)
-
-    print("Number of events in merged array:")
-    print(len(merged))
-
-    return merged
+    return calculation
 
 
 producers = [
@@ -55,7 +50,8 @@ class GeekswTests(unittest.TestCase):
 
         record = fwk.produce(products=products, producers=producers, datasets=datasets)
 
-        # print(record["WWZ/merged"])
+        print("Length of final record:")
+        print(len(record["WWZ/merged"]))
 
         self.assertTrue("WWZ/merged" in record.keys())
 

@@ -1,5 +1,7 @@
 import functools
 from parsl.app.app import python_app
+from .futures_helpers import MultiFuture
+
 
 def produces(*product_names):
 
@@ -37,23 +39,31 @@ def consumes(**requirements):
         return producer_func
     return wrapper
 
+def identity_wrapper(func):
+    @functools.wraps(func)
+    def producer_func(**inputs):
+        return func(**inputs)
+    return producer_func
 
-def set_producer_type(producer_type):
+
+# Nothing special for now, it's the users responsability to get the output in the right shape
+global_to_stream = identity_wrapper
+global_to_global = identity_wrapper
+
+
+def stream_to_global(merger_func):
     def wrapper(func):
         @functools.wraps(func)
         def producer_func(**inputs):
-            return func(**inputs)
-
-        if not hasattr(producer_func, "producer_type"):
-            producer_func.producer_type = producer_type
+            n = len(next(iter(inputs.values())))
+            streamed_inputs = [{k : v[i] for k, v in inputs.items() if k != "meta"} for i in range(n)]
+            if "meta" in inputs.keys():
+                for i in streamed_inputs:
+                    streamed_inputs["meta"] = inputs["meta"]
+            return MultiFuture([func(**streamed_inputs[i]) for i in range(n)], merger=merger_func)
 
         return producer_func
     return wrapper
-
-
-global_to_stream = set_producer_type("global_to_stream")
-global_to_global = set_producer_type("global_to_global")
-stream_to_global = set_producer_type("stream_to_global")
 
 
 def stream_to_stream(func):
@@ -61,7 +71,6 @@ def stream_to_stream(func):
     def producer_func(**inputs):
         n = len(next(iter(inputs.values())))
         streamed_inputs = [{k : v[i] for k, v in inputs.items()} for i in range(n)]
-        res = [func(**streamed_inputs[i]) for i in range(n)]
-        return res
+        return MultiFuture([func(**streamed_inputs[i]) for i in range(n)])
 
     return producer_func

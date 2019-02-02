@@ -32,27 +32,6 @@ class FuturesDummy(object):
     def done(self):
         return False
 
-class MultiFuture(object):
-
-    def __init__(self, futures):
-        if hasattr(futures, "__len__"):
-            self.futures = futures
-
-        else:
-            self.futures = [futures]
-
-    def done(self):
-        for f in self.futures:
-            if not f.done():
-                return False
-
-        return True
-
-    def result(self):
-        if len(self.futures) == 1:
-            return self.futures[0].result()
-        return [f.result() for f in self.futures]
-
 
 class MetaInfo(object):
 
@@ -255,7 +234,7 @@ def produce(products=None, producers=[], datasets=None, cache_dir="__geeksw_cach
                 continue
 
             if not launched[ip][0]:
-                futures[ip] = MultiFuture(run_producer(producers[ip]))
+                futures[ip] = run_producer(producers[ip])
                 launched[ip][0] = True
 
             if not futures[ip].done():
