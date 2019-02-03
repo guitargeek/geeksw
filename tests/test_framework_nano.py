@@ -24,7 +24,7 @@ def load_tree():
 def load_branch(trees):
 
     time.sleep(3)
-    
+
     data = trees.array("Electron_pt")
     print("Calculator got data of length {0}".format(len(data)))
 
@@ -53,7 +53,7 @@ class GeekswTests(unittest.TestCase):
         datasets = ["/WWZ"]
         products  = ["/WWZ/merged"]
 
-        record = fwk.produce(products=products, producers=producers, datasets=datasets)
+        record = fwk.produce(products=products, producers=producers, datasets=datasets, max_workers=32)
 
         print("Length of final record:")
         print(len(record["WWZ/merged"]))

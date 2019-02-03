@@ -18,14 +18,9 @@ from types import FunctionType
 import awkward
 import h5py
 
-import parsl
-# from parsl.app.app import python_app, bash_app
-from parsl.configs.local_threads import config
+from concurrent.futures import ThreadPoolExecutor
 
 import glob
-
-
-parsl.load(config)
 
 
 awkward.persist.whitelist = awkward.persist.whitelist + [[u'awkward', u'Particles', u'frompairs']]
@@ -113,7 +108,7 @@ def cache(obj, name):
 
     # Saving JaggedArray stuff
     if type(obj) == Particles:
-        file_name = os.path.join(path, name + ".h5")
+        file_name = os.path.join(cache_dir, name + ".h5")
         with h5py.File(file_name, "w") as hf:
             ah5 = awkward.hdf5(hf)
             ah5["product"] = obj.table()
@@ -122,7 +117,7 @@ def cache(obj, name):
 
     # If there is no special rule, just try to pickle
     try:
-        file_name = os.path.join(path, name + ".pkl")
+        file_name = os.path.join(cache_dir, name + ".pkl")
         with open(file_name, "wb") as f:
             pickle.dump(obj, f)
         return os.path.getsize(file_name)
@@ -186,12 +181,16 @@ def get_required_producers(product, producer_funcs, datasets, record):
 
     return producers
 
-
 def produce(products=None,
             producers=[],
             datasets=None,
+            max_workers=1,
             cache_time=2,
+
     ):
+
+    # Executor for multithreading
+    executor = ThreadPoolExecutor(max_workers=max_workers)
 
     target_products = products
 
@@ -243,7 +242,7 @@ def produce(products=None,
             inputs["meta"] = MetaInfo(subs = producer.subs,
                                       working_dir = producer.working_dir)
 
-        return producer.run(**inputs)
+        return producer.run(executor, **inputs)
 
     launched = [[False] for i in range(len(producers))]
     futures = [FuturesDummy() for i in range(len(producers))]
