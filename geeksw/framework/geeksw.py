@@ -60,7 +60,7 @@ def get_from_cache(product):
             ah5 = awkward.hdf5(hf)
             return Particles.fromtable(ah5["product"])
 
-    raise ValueError(f"Product {product} not found in cache!")
+    raise ValueError("Product "+product+" not found in cache!")
 
 
 def load_module(name, path_to_file):
