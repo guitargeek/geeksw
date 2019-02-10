@@ -51,13 +51,14 @@ def stream_to_global(merger_func):
     def wrapper(func):
         @functools.wraps(func)
         def producer_func(executor, **inputs):
-            n = len(next(iter(inputs.values())))
+            for v in inputs.values():
+                if hasattr(v, "__len__"):
+                    n = len(v)
+                    break
             streamed_inputs = [{k : v[i] for k, v in inputs.items() if k != "meta"} for i in range(n)]
             if "meta" in inputs.keys():
-                for i in streamed_inputs:
-                    streamed_inputs["meta"] = inputs["meta"]
-            # return MultiFuture([func(**streamed_inputs[i]) for i in range(n)], merger=merger_func)
-            # return [func(**streamed_inputs[i]) for i in range(n)]
+                for i in range(len(streamed_inputs)):
+                    streamed_inputs[i]["meta"] = inputs["meta"]
             return MultiFuture([executor.submit(func, **streamed_inputs[i]) for i in range(n)], merger=merger_func)
 
         return producer_func
@@ -67,10 +68,14 @@ def stream_to_global(merger_func):
 def stream_to_stream(func):
     @functools.wraps(func)
     def producer_func(executor, **inputs):
-        n = len(next(iter(inputs.values())))
-        streamed_inputs = [{k : v[i] for k, v in inputs.items()} for i in range(n)]
-        # return MultiFuture([func(**streamed_inputs[i]) for i in range(n)])
-        # return [func(**streamed_inputs[i]) for i in range(n)]
+        for v in inputs.values():
+            if hasattr(v, "__len__"):
+                n = len(v)
+                break
+        streamed_inputs = [{k : v[i] for k, v in inputs.items() if k != "meta"} for i in range(n)]
+        if "meta" in inputs.keys():
+            for i in range(len(streamed_inputs)):
+                streamed_inputs[i]["meta"] = inputs["meta"]
         return MultiFuture([executor.submit(func, **streamed_inputs[i]) for i in range(n)])
 
     return producer_func
