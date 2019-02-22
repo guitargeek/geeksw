@@ -1,4 +1,8 @@
-def indices2mask(selection, array):
+import numpy as np
+import awkward
+
+
+def selection2mask(selection, array):
     """Convert at jagged array of index type into a jagged array of boolean
     types to mask an other array.
 

@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def zpairs(particles, z_mass=91.19, return_by_charge=False):
     """Returns the two indices per event that form a pair closest to the Z mass.
 
