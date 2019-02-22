@@ -97,13 +97,13 @@ class UprootIOWrapper(object):
         if self._working_dir == "":
             return self._opened_files[0].keys()
         keys = self._opened_files[0][self._working_dir].keys()
-        return [str(k) for k in keys]
+        return [k.decode("utf-8") for k in keys]
 
     def allkeys(self):
         if self._working_dir == "":
             return self._opened_files[0].keys()
         keys = self._opened_files[0][self._working_dir].allkeys()
-        return [str(k) for k in keys]
+        return [k.decode("utf-8") for k in keys]
 
 
 class Dataset(UprootIOWrapper):
