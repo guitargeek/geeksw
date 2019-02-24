@@ -1,5 +1,6 @@
 import functools
 from .futures import MultiFuture
+from concurrent.futures import ThreadPoolExecutor
 
 
 def produces(*product_names):
@@ -37,8 +38,8 @@ def consumes(**requirements):
 
 def identity_wrapper(func):
     @functools.wraps(func)
-    def producer_func(executor, **inputs):
-        return executor.submit(func, **inputs)
+    def producer_func(**inputs):
+        return func(**inputs)
     return producer_func
 
 
@@ -49,7 +50,7 @@ global_to_global = identity_wrapper
 
 def stream_to_global(func):
     @functools.wraps(func)
-    def producer_func(executor, **inputs):
+    def producer_func(**inputs):
         for v in inputs.values():
             if hasattr(v, "__len__"):
                 n = len(v)
@@ -58,14 +59,15 @@ def stream_to_global(func):
         if "meta" in inputs.keys():
             for i in range(len(streamed_inputs)):
                 streamed_inputs[i]["meta"] = inputs["meta"]
-        return MultiFuture([executor.submit(func, **streamed_inputs[i]) for i in range(n)])
+        executor = ThreadPoolExecutor(max_workers=32)
+        return MultiFuture([executor.submit(func, **streamed_inputs[i]) for i in range(n)]).result()
 
     return producer_func
 
 
 def stream_to_stream(func):
     @functools.wraps(func)
-    def producer_func(executor, **inputs):
+    def producer_func(**inputs):
         for v in inputs.values():
             if hasattr(v, "__len__"):
                 n = len(v)
@@ -74,6 +76,7 @@ def stream_to_stream(func):
         if "meta" in inputs.keys():
             for i in range(len(streamed_inputs)):
                 streamed_inputs[i]["meta"] = inputs["meta"]
-        return MultiFuture([executor.submit(func, **streamed_inputs[i]) for i in range(n)])
+        executor = ThreadPoolExecutor(max_workers=32)
+        return MultiFuture([executor.submit(func, **streamed_inputs[i]) for i in range(n)]).result()
 
     return producer_func

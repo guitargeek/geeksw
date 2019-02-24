@@ -18,8 +18,6 @@ from types import FunctionType
 import awkward
 import h5py
 
-from concurrent.futures import ThreadPoolExecutor
-
 import glob
 
 
@@ -27,11 +25,6 @@ awkward.persist.whitelist = awkward.persist.whitelist + [[u'awkward', u'Particle
 
 
 cache_dir = ".geeksw_cache"
-
-
-class FuturesDummy(object):
-    def done(self):
-        return False
 
 
 class MetaInfo(object):
@@ -188,9 +181,6 @@ def produce(products=None,
             cache_time=2,
     ):
 
-    # Executor for multithreading
-    executor = ThreadPoolExecutor(max_workers=max_workers)
-
     target_products = products
 
     # Create the cache dir structure
@@ -241,10 +231,9 @@ def produce(products=None,
             inputs["meta"] = MetaInfo(subs = producer.subs,
                                       working_dir = producer.working_dir)
 
-        return producer.run(executor, **inputs)
+        return producer.run(**inputs)
 
     launched = [[False] for i in range(len(producers))]
-    futures = [FuturesDummy() for i in range(len(producers))]
     start_times = [None] * len(producers)
     elapsed_times = [None] * len(producers)
 
@@ -253,8 +242,7 @@ def produce(products=None,
 
         start_time = time.time()
 
-        futures[ip] = run_producer(producers[ip])
-        record[producers[ip].full_product] = futures[ip].result()
+        record[producers[ip].full_product] = run_producer(producers[ip])
 
         requirements_all = []
         for i, producer in enumerate(producers):
