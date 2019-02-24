@@ -184,9 +184,8 @@ def get_required_producers(product, producer_funcs, datasets, record):
 def produce(products=None,
             producers=[],
             datasets=None,
-            max_workers=1,
+            max_workers=32,
             cache_time=2,
-
     ):
 
     # Executor for multithreading
@@ -250,50 +249,27 @@ def produce(products=None,
     elapsed_times = [None] * len(producers)
 
     # Loop over producers needed to get to the desired output products
-    while exec_order:
+    for i, ip in enumerate(exec_order):
 
-        for i, ip in enumerate(exec_order):
+        start_time = time.time()
 
-            requirements = producers[ip].expand_full_requires(flatten=True)
+        futures[ip] = run_producer(producers[ip])
+        record[producers[ip].full_product] = futures[ip].result()
 
-            requirements_available = True
-            for x in requirements:
-                if x not in record.keys():
-                    requirements_available = False
-                    break
+        requirements_all = []
+        for i, producer in enumerate(producers):
+            if i in exec_order:
+                requirements_all += producer.expand_full_requires(flatten=True)
 
-            if not requirements_available:
-                continue
+        if time.time() - start_time > cache_time:
+            print("Pruducer time longer than 2 seconds, caching product...")
+            pname = producers[ip].full_product
+            size = cache(record[pname], pname)
+            if size > 0:
+               print("Cached product {0}: {1}".format(pname, humanbytes(size)))
 
-            if not launched[ip][0]:
-                futures[ip] = run_producer(producers[ip])
-                launched[ip][0] = True
-                start_times[ip] = time.time()
-
-            if not futures[ip].done():
-                continue
-
-            elapsed_times[ip] = time.time() - start_times[ip]
-            start_times[ip] = None
-
-            record[producers[ip].full_product] = futures[ip].result()
-
-            if elapsed_times[ip] > cache_time:
-                print("Pruducer time longer than 2 seconds, caching product...")
-                pname = producers[ip].full_product
-                size = cache(record[pname], pname)
-                if size > 0:
-                   print("Cached product {0}: {1}".format(pname, humanbytes(size)))
-
-            exec_order.pop(i)
-
-            requirements_all = []
-            for i, producer in enumerate(producers):
-                if i in exec_order:
-                    requirements_all += producer.expand_full_requires(flatten=True)
-
-            for key in list(record.keys()):
-                if key not in requirements_all and key not in target_products:
-                    del record[key]
+        for key in list(record.keys()):
+            if key not in requirements_all and key not in target_products:
+                del record[key]
 
     return record

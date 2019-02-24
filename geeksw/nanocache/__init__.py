@@ -30,6 +30,7 @@ class ScratchCache(object):
         return os.path.isfile(file_name)
 
     def __getitem__(self, key):
+        print("Getting from cache...")
         file_name = self._get_file_name(key)
 
         if not key in self:

@@ -47,22 +47,20 @@ global_to_stream = identity_wrapper
 global_to_global = identity_wrapper
 
 
-def stream_to_global(merger_func):
-    def wrapper(func):
-        @functools.wraps(func)
-        def producer_func(executor, **inputs):
-            for v in inputs.values():
-                if hasattr(v, "__len__"):
-                    n = len(v)
-                    break
-            streamed_inputs = [{k : v[i] for k, v in inputs.items() if k != "meta"} for i in range(n)]
-            if "meta" in inputs.keys():
-                for i in range(len(streamed_inputs)):
-                    streamed_inputs[i]["meta"] = inputs["meta"]
-            return MultiFuture([executor.submit(func, **streamed_inputs[i]) for i in range(n)], merger=merger_func)
+def stream_to_global(func):
+    @functools.wraps(func)
+    def producer_func(executor, **inputs):
+        for v in inputs.values():
+            if hasattr(v, "__len__"):
+                n = len(v)
+                break
+        streamed_inputs = [{k : v[i] for k, v in inputs.items() if k != "meta"} for i in range(n)]
+        if "meta" in inputs.keys():
+            for i in range(len(streamed_inputs)):
+                streamed_inputs[i]["meta"] = inputs["meta"]
+        return MultiFuture([executor.submit(func, **streamed_inputs[i]) for i in range(n)])
 
-        return producer_func
-    return wrapper
+    return producer_func
 
 
 def stream_to_stream(func):
