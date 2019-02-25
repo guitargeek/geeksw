@@ -20,7 +20,7 @@ def selection2mask(selection, array):
     """
     counts = array.counts
     mask = np.zeros(len(array.flatten()), dtype=array.MASKTYPE)
-    selected_indices = ((np.cumsum(counts) - counts[0]) + selection).flatten()
+    selected_indices = ((np.cumsum(counts) - counts) + selection).flatten()
     mask[selected_indices] = True
     offsets = array.counts2offsets(counts)
     starts = offsets[:-1]
