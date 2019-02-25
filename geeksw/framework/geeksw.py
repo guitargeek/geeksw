@@ -70,8 +70,7 @@ def load_module(name, path_to_file):
 
 
 def load_producers(producers_path):
-    producer_funcs = []
-    hashes = []  # file hashes to track changes
+    producers = []
 
     for file_name in os.listdir(producers_path):
         if file_name == "__init__.py" or file_name[-3:] != ".py":
@@ -83,11 +82,10 @@ def load_producers(producers_path):
             if not hasattr(func, "product") or not hasattr(func, "requirements"):
                 continue
             file_path = os.path.join(producers_path, file_name)
-            producer_funcs.append(func)
-            hashes.append(func.func_hash)
+            producers.append(func)
     del file_name
 
-    return producer_funcs
+    return producers
 
 
 def get_exec_order(producers):
@@ -187,11 +185,9 @@ def produce(products=None,
     mkdir(cache_dir)
 
     if type(producers) == str:
-        producer_funcs = load_producers(producers)
-    else:
-        producer_funcs = producers
+        producers = load_producers(producers)
 
-    producers = []
+    producer_instances = []
 
     target_products = [expand_wildcard(t[1:], datasets) for t in target_products]
     target_products = [y for x in target_products for y in x]
@@ -199,8 +195,9 @@ def produce(products=None,
     record = {}
 
     for t in target_products:
-        producers += get_required_producers(t, producer_funcs, datasets, record)
-    producers = list(set(producers))
+        producer_instances += get_required_producers(t, producers, datasets, record)
+
+    producers = list(set(producer_instances))
 
     exec_order = get_exec_order(producers)
 
