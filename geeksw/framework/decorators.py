@@ -14,28 +14,6 @@ class StreamList(list):
             super().__init__([product])
 
 
-def produces(*product_names, stream=False):
-
-    if len(product_names) > 1:
-        raise ValueError("Producers functions with more than one product not supported yet!")
-    product_name = product_names[0]
-
-    def wrapper(func):
-        @functools.wraps(func)
-        def producer_func(**inputs):
-            if stream:
-                return StreamList(func(**inputs))
-            return func(**inputs)
-
-        producer_func.product = product_name
-        is_template = "<" in product_name or ">" in product_name
-        producer_func.is_template = is_template
-        if not hasattr(producer_func, "requirements"):
-            producer_func.requirements = {}
-        return producer_func
-    return wrapper
-
-
 def consumes(**requirements):
     def wrapper(func):
         @functools.wraps(func)
@@ -48,39 +26,63 @@ def consumes(**requirements):
     return wrapper
 
 
-def one(func):
-    @functools.wraps(func)
-    def producer_func(**inputs):
-        for k, v in inputs.items():
-            if isinstance(v, StreamList):
-                inputs[k] =  concatenate(v)
-        return func(**inputs)
+def one_producer(*product_names, stream=False):
+    if len(product_names) > 1:
+        raise ValueError("Producers functions with more than one product not supported yet!")
+    product_name = product_names[0]
 
-    return producer_func
-
-
-def stream(func):
-    @functools.wraps(func)
-    def producer_func(**inputs):
-        stream_list_lengths = set([len(v) for v in inputs.values() if isinstance(v, StreamList)])
-
-        if len(stream_list_lengths) == 0:
-            # in this case, it might as well be a "one" producer
+    def one_wrapper(func):
+        @functools.wraps(func)
+        def producer_func(**inputs):
+            for k, v in inputs.items():
+                if isinstance(v, StreamList):
+                    inputs[k] =  concatenate(v)
+            if stream:
+                return StreamList(func(**inputs))
             return func(**inputs)
-        elif len(stream_list_lengths) > 1:
-            raise ValueError("A stream produces can't take multiple stream inputs of different lengths!")
 
-        n = stream_list_lengths.pop()
+        producer_func.product = product_name
+        is_template = "<" in product_name or ">" in product_name
+        producer_func.is_template = is_template
+        if not hasattr(producer_func, "requirements"):
+            producer_func.requirements = {}
+        return producer_func
+    return one_wrapper
 
-        sinputs = [dict() for k in inputs]
 
-        for k, v in inputs.items():
-            isstream = isinstance(v, StreamList)
-            for i in range(n):
-                sinputs[i][k] = v[i] if isstream else v
+def stream_producer(*product_names):
+    if len(product_names) > 1:
+        raise ValueError("Producers functions with more than one product not supported yet!")
+    product_name = product_names[0]
 
-        with ThreadPoolExecutor(max_workers=32) as executor:
-            results = MultiFuture([executor.submit(func, **sinputs[i]) for i in range(n)]).result()
-        return StreamList(results)
+    def stream_wrapper(func):
+        @functools.wraps(func)
+        def producer_func(**inputs):
+            stream_list_lengths = set([len(v) for v in inputs.values() if isinstance(v, StreamList)])
 
-    return producer_func
+            if len(stream_list_lengths) == 0:
+                # in this case, it might as well be a "one" producer
+                return func(**inputs)
+            elif len(stream_list_lengths) > 1:
+                raise ValueError("A stream produces can't take multiple stream inputs of different lengths!")
+
+            n = stream_list_lengths.pop()
+
+            sinputs = [dict() for k in inputs]
+
+            for k, v in inputs.items():
+                isstream = isinstance(v, StreamList)
+                for i in range(n):
+                    sinputs[i][k] = v[i] if isstream else v
+
+            with ThreadPoolExecutor(max_workers=32) as executor:
+                results = MultiFuture([executor.submit(func, **sinputs[i]) for i in range(n)]).result()
+            return StreamList(results)
+
+        producer_func.product = product_name
+        is_template = "<" in product_name or ">" in product_name
+        producer_func.is_template = is_template
+        if not hasattr(producer_func, "requirements"):
+            producer_func.requirements = {}
+        return producer_func
+    return stream_wrapper
