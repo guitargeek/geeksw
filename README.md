@@ -1,2 +1,4 @@
-# geeksw
-A CMSSW inspired analysis framework in Python.
+# GeekSW
+Python package to facilitate analysis work in in the CMS collaboration.
+
+## Introduction

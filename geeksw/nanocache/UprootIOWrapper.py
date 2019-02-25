@@ -1,7 +1,7 @@
 import os
 
 
-from geeksw.utils.core import concatenate
+from ..utils.core import concatenate
 
 
 class UprootIOWrapper(object):

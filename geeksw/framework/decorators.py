@@ -1,7 +1,7 @@
 import functools
-from .futures import MultiFuture
 from concurrent.futures import ThreadPoolExecutor
-from geeksw.utils.core import concatenate
+from ..utils.core import concatenate
+from .futures import MultiFuture
 
 
 class StreamList(list):

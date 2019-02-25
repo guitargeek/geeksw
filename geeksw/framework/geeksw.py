@@ -5,23 +5,14 @@ import inspect
 import time
 import numpy as np
 import re
+import awkward
+import h5py
+import glob
 
 from .helpers import *
 from .DependencyGraph import DependencyGraph
 from .Producers import Producer as GeekProducer
 from .Producers import expand_wildcard
-
-from ..data_formats import Particles
-
-from types import FunctionType
-
-import awkward
-import h5py
-
-import glob
-
-
-awkward.persist.whitelist = awkward.persist.whitelist + [[u'awkward', u'Particles', u'frompairs']]
 
 
 cache_dir = ".geeksw_cache"
@@ -41,12 +32,6 @@ def get_from_cache(product):
     cache_file_name = os.path.join(cache_dir, filename + ".pkl")
     if os.path.isfile(cache_file_name):
         return pickle.load(open(cache_file_name, "rb"))
-
-    cache_file_name = os.path.join(cache_dir, filename + ".h5")
-    if os.path.isfile(cache_file_name):
-        with h5py.File(cache_file_name) as hf:
-            ah5 = awkward.hdf5(hf)
-            return Particles.fromtable(ah5["product"])
 
     raise ValueError("Product "+product+" not found in cache!")
 
@@ -97,16 +82,6 @@ def cache(obj, name):
 
     name = name.replace("/", "__")
 
-    # Saving JaggedArray stuff
-    if type(obj) == Particles:
-        file_name = os.path.join(cache_dir, name + ".h5")
-        with h5py.File(file_name, "w") as hf:
-            ah5 = awkward.hdf5(hf)
-            ah5["product"] = obj.table()
-
-        return os.path.getsize(file_name)
-
-    # If there is no special rule, just try to pickle
     try:
         file_name = os.path.join(cache_dir, name + ".pkl")
         with open(file_name, "wb") as f:

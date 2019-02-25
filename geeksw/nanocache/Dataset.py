@@ -3,7 +3,7 @@ import uproot
 from concurrent.futures import ThreadPoolExecutor
 
 
-from geeksw.utils.core import concatenate
+from ..utils.core import concatenate
 
 
 def list_files(dataset_name):
