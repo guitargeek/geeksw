@@ -5,6 +5,13 @@ import numpy as np
 import h5py
 from concurrent.futures import ThreadPoolExecutor
 
+def concatenate(arrays):
+    if len(arrays) == 1:
+       return arrays[0]
+    elif isinstance(arrays[0], np.ndarray):
+        return np.concatenate([a for a in arrays])
+    else:
+        return arrays[0].concatenate([a for a in arrays[1:]])
 
 def list_files(dataset):
     cmd = 'dasgoclient -query="file dataset={0} system=phedex"'.format(dataset)
@@ -49,6 +56,30 @@ class Dataset(object):
 
         self._files = open_files(self._name, self._server)
 
+    def array(self, key, cache=None):
+
+        cache_key = os.path.join(self._name, key)
+
+        if not cache is None:
+            if cache_key in cache:
+                return cache[cache_key]
+
+        dirname = os.path.dirname(key)
+        basename = os.path.basename(key)
+
+        def load_array(i, f):
+            tree = f[dirname]
+            return tree.array(basename)
+
+        with ThreadPoolExecutor(max_workers=32) as executor:
+            arrays = [executor.submit(load_array, i, f) for i, f in enumerate(self.files)]
+        array = concatenate([a.result() for a in arrays])
+
+        if not cache is None:
+            cache[cache_key] = array
+
+        return array
+
     @property
     def files(self):
         if self._files is None:
@@ -85,11 +116,11 @@ class ScratchCache(object):
         return os.path.isfile(file_name)
 
     def __getitem__(self, key):
-        print("Getting from cache...")
+        print("Getting from cache {0}...".format(key))
         file_name = self._get_file_name(key)
 
         if not key in self:
-            raise KeyError(key +"not found in sratch cache.")
+            raise KeyError(key +"not found in scratch cache.")
 
         with h5py.File(file_name) as hf:
             ah5 = awkward.hdf5(hf)
@@ -100,64 +131,36 @@ class ScratchCache(object):
 
 class UprootIOWrapper(object):
 
-    def __init__(self, dataset=None, cache=None, verbose=False):
+    def __init__(self, datasets=None, cache=None, verbose=False):
         self._verbose = verbose
-        self._dataset = dataset
+        self._datasets = datasets
         self._working_dir = ""
         self._cache = cache # the persistent cache
         self._uproot_cache = uproot.cache.ThreadSafeArrayCache(limitbytes=1e9)
 
     def array(self, key):
-
         full_key = os.path.join(self._working_dir, key)
-        cache_key = os.path.join(self._dataset.name, full_key)
-
-        if cache_key in self._cache:
-            return self._cache[cache_key]
-
-        dirname = os.path.dirname(full_key)
-        basename = os.path.basename(full_key)
-
-        def load_array(i, f):
-            if self._verbose:
-                print("Reading array from file {0} of {1}...".format(i+1, len(self._dataset.files)))
-            tree = f[dirname]
-            return tree.array(basename, cache=self._uproot_cache)
-
-        with ThreadPoolExecutor(max_workers=32) as executor:
-            arrays = [executor.submit(load_array, i, f) for i, f in enumerate(self._dataset.files)]
-        if len(arrays) == 1:
-            array = arrays[0].result()
-        elif isinstance(arrays[0], np.ndarray):
-            array = np.concatenate([a.result() for a in arrays])
-        else:
-            array = arrays[0].result().concatenate([a.result() for a in arrays[1:]])
-
-        if not self._cache is None:
-            self._cache[cache_key] = array
-
-        return array
+        arrays = [dset.array(full_key, self._cache) for dset in self._datasets]
+        return concatenate(arrays)
 
     def __getitem__(self, key):
-        out = UprootIOWrapper(dataset=self._dataset, cache=self._cache, verbose=self._verbose)
+        out = UprootIOWrapper(datasets=self._datasets, cache=self._cache, verbose=self._verbose)
         out._working_dir = os.path.join(self._working_dir, key)
         return out
 
     def keys(self):
         if self._working_dir == "":
-            return self._dataset.files[0].keys()
-        keys = self._dataset.files[0][self._working_dir].keys()
+            return self._datasets[0].files[0].keys()
+        keys = self._datasets[0].files[0][self._working_dir].keys()
         return [k.decode("utf-8") for k in keys]
 
     def allkeys(self):
         if self._working_dir == "":
-            return self._dataset.files[0].keys()
-        keys = self._dataset.files[0][self._working_dir].allkeys()
+            return self._datasets[0].files[0].keys()
+        keys = self._datasets[0].files[0][self._working_dir].allkeys()
         return [k.decode("utf-8") for k in keys]
 
-
-def load_dataset(name, cache=ScratchCache(), server="polgrid4.in2p3.fr"):
-
+def trim_name(name):
     # make sure there are no duplicate dashes
     l = len(name)
     l_new = -1
@@ -169,7 +172,22 @@ def load_dataset(name, cache=ScratchCache(), server="polgrid4.in2p3.fr"):
     # make sure dataset name starts with a dash
     if not name.startswith("/"):
         name = "/" + name
+    
+    return name
 
-    dataset = Dataset(name, server, lazy=True)
 
-    return UprootIOWrapper(dataset=dataset, cache=cache)
+def load_datasets(names, cache=ScratchCache(), server="polgrid4.in2p3.fr"):
+
+    names = [trim_name(n) for n in names]
+
+    if type(names) == str:
+        names = [names]
+    if type(names) == list:
+        datasets = [Dataset(n, server, lazy=True) for n in names]
+    else:
+        raise TypeError("Argument names has to be string or list")
+
+    return UprootIOWrapper(datasets=datasets, cache=cache)
+
+def load_dataset(name, cache=ScratchCache(), server="polgrid4.in2p3.fr"):
+    return load_datasets([name], cache=cache, server=server)
