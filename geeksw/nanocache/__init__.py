@@ -17,7 +17,7 @@ def list_files(dataset):
     cmd = 'dasgoclient -query="file dataset={0} system=phedex"'.format(dataset)
     file_list = os.popen(cmd).read()
     file_list = [f.strip() for f in file_list.split("\n") if ".root" in f]
-    return file_list
+    return file_list.sort()
 
 
 def open_files(dataset, server):
