@@ -3,6 +3,16 @@ from .futures import MultiFuture
 from concurrent.futures import ThreadPoolExecutor
 
 
+class StreamList(list):
+    """Class to replace a basic list for streamed products
+    """
+    def __init__(self, product):
+        if type(product) == list:
+            super().__init__(product)
+        else:
+            super().__init__([product])
+
+
 def produces(*product_names):
 
     if len(product_names) > 1:
@@ -44,8 +54,14 @@ def identity_wrapper(func):
 
 
 # Nothing special for now, it's the users responsability to get the output in the right shape
-global_to_stream = identity_wrapper
 global_to_global = identity_wrapper
+
+
+def global_to_stream(func):
+    @functools.wraps(func)
+    def producer_func(**inputs):
+        return StreamList(func(**inputs))
+    return producer_func
 
 
 def stream_to_global(func):
@@ -68,7 +84,7 @@ def stream_to_global(func):
 def stream_to_stream(func):
     @functools.wraps(func)
     def producer_func(**inputs):
-        for v in inputs.values():
+        for k, v in inputs.items():
             if hasattr(v, "__len__"):
                 n = len(v)
                 break
@@ -77,6 +93,7 @@ def stream_to_stream(func):
             for i in range(len(streamed_inputs)):
                 streamed_inputs[i]["meta"] = inputs["meta"]
         executor = ThreadPoolExecutor(max_workers=32)
-        return MultiFuture([executor.submit(func, **streamed_inputs[i]) for i in range(n)]).result()
+        results = MultiFuture([executor.submit(func, **streamed_inputs[i]) for i in range(n)]).result()
+        return StreamList(results)
 
     return producer_func
