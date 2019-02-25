@@ -9,7 +9,7 @@ import awkward
 import h5py
 import glob
 
-from .helpers import *
+from .utils import *
 from .DependencyGraph import DependencyGraph
 from .Producers import Producer as GeekProducer
 from .Producers import expand_wildcard
@@ -36,24 +36,6 @@ def get_from_cache(product):
     raise ValueError("Product "+product+" not found in cache!")
 
 
-def load_module(name, path_to_file):
-    if sys.version_info < (3, 0):
-        import imp
-
-        return imp.load_source(name, path_to_file)
-    if sys.version_info < (3, 5):
-        from importlib.machinery import SourceFileLoader
-
-        return SourceFileLoader(name, path_to_file).load_module()
-    else:
-        import importlib.util
-
-        spec = importlib.util.spec_from_file_location(name, path_to_file)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module
-
-
 def load_producers(producers_path):
     producers = []
 
@@ -71,11 +53,6 @@ def load_producers(producers_path):
     del file_name
 
     return producers
-
-
-def get_exec_order(producers):
-    graph = DependencyGraph(producers)
-    return graph.toposort()
 
 
 def cache(obj, name):
@@ -159,7 +136,7 @@ def produce(products=None,
     # Create the cache dir structure
     mkdir(cache_dir)
 
-    if type(producers) == str:
+    if isinstance(producers, str):
         producers = load_producers(producers)
 
     producer_instances = []
@@ -174,7 +151,7 @@ def produce(products=None,
 
     producers = list(set(producer_instances))
 
-    exec_order = get_exec_order(producers)
+    exec_order = DependencyGraph(producers).toposort()
 
     print("Producers:")
     for i, ip in enumerate(exec_order):
