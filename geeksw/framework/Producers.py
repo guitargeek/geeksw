@@ -3,60 +3,57 @@ import glob
 import itertools
 
 
-def path_product(p1, p2):
-    return [os.path.join(*x) for x in itertools.product(p1, p2)]
-
-
 def expand_wildcard(product, datasets):
     if not "*" in product:
         return [product]
     return [product.replace("*", ds) for ds in datasets]
 
 
-class Producer(object):
+def replace_from_dict(s, subs):
+    for t in subs:
+        s = s.replace(t, subs[t])
+    return s
 
-    requires = []
-    cache = False
 
-    def expand_full_requires(self, flatten=False):
-        expanded = [expand_wildcard(req, self.datasets) for req in self.full_requires]
-        if flatten:
-            return [y for x in expanded for y in x]
-        return expanded
+class ProducerWrapper(object):
 
     def __init__(self, func, subs, working_dir, datasets):
+        product = replace_from_dict(func.product, subs)
+        requirements = {k : replace_from_dict(v, subs) for k, v in func.requirements.items()}
 
-        self.product = func.product
-        self.input_names = func.requirements.keys()
-        self.requires = func.requirements.values()
-
-        self.run = func
-
-        def replace_from_dict(s, subs):
-            for t in subs:
-                s = s.replace(t, subs[t])
-            return s
+        self.description = " ".join(list(requirements.values()) + ["->", product])
 
         self.subs = subs
+        self.product = working_dir + product
 
-        self.product = replace_from_dict(self.product, subs)
-        self.requires = [replace_from_dict(req, subs) for req in self.requires]
+        self.requirements = {k : expand_wildcard(working_dir + v, datasets) for k, v in requirements.items()}
+        self.flattened_requirements = [y for x in self.requirements.values() for y in x]
 
-        self.datasets = datasets
+        self.func = func
 
-        self.full_product = working_dir + self.product
-        self.full_requires = [working_dir + req for req in self.requires]
-        self.full_requires_expanded = self.expand_full_requires()
+    def run(self, record):
+        inputs = {}
+        for k, req in self.requirements.items():
+            if len(req) > 1:
+                inputs[k] = [(x, record[x]) for x in req]
+            else:
+                inputs[k] = record[req[0]]
+
+        if self.func.is_template:
+            for k in inputs:
+                inputs[k].subs = self.subs
+
+        return self.func(**inputs)
 
     def __eq__(self, other):
         """ Check if producer has same template specialization.
         """
         if type(self) != type(other):
             return False
-        return self.full_product == other.full_product
+        return self.product == other.product
 
     def __hash__(self):
         """ Should be some collision free hash function to spot duplicate producers.
             Used in set().
         """
-        return hash(self.full_product)
+        return hash(self.product)

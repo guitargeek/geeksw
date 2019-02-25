@@ -2,7 +2,7 @@ def make_dependency_graph(producers):
 
     requires_dict = {}
     for i, p in enumerate(producers):
-        for req in p.expand_full_requires(flatten=True):
+        for req in p.flattened_requirements:
             if req not in requires_dict:
                 requires_dict[req] = []
             requires_dict[req] += [i]
@@ -10,9 +10,9 @@ def make_dependency_graph(producers):
     graph = {}
     for i, p in enumerate(producers):
         graph[i] = []
-        if not p.full_product in requires_dict:
+        if not p.product in requires_dict:
             continue
-        for other in requires_dict[p.full_product]:
+        for other in requires_dict[p.product]:
             graph[i] += [other]
 
     return dict(graph)

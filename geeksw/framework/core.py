@@ -10,7 +10,7 @@ import glob
 
 from .utils import *
 from .dependencies import *
-from .Producers import Producer
+from .Producers import ProducerWrapper
 from .Producers import expand_wildcard
 
 
@@ -99,8 +99,7 @@ def get_required_producers(product, producer_funcs, datasets, record):
         record[product] = get_from_cache(product)
         return []
 
-    n = len(producer_funcs)
-    matches = list(map(lambda P: ProductMatch(product, P), producer_funcs))
+    matches = [ProductMatch(product, f) for f in producer_funcs]
     # Penalize matching depth score with number of template specializations
     # to give priority to full specializations.
     scores = [m.score - len(m.subs) / 100.0 for m in matches]
@@ -109,9 +108,9 @@ def get_required_producers(product, producer_funcs, datasets, record):
     i = np.argmax(scores)
 
     working_dir = product[: -len(matches[i].group)]
-    producers = [Producer(producer_funcs[i], matches[i].subs, working_dir, datasets)]
+    producers = [ProducerWrapper(producer_funcs[i], matches[i].subs, working_dir, datasets)]
 
-    for i, req in enumerate(producers[0].expand_full_requires(flatten=True)):
+    for req in producers[0].flattened_requirements:
         producers += get_required_producers(req, producer_funcs, datasets, record)
 
     return producers
@@ -148,51 +147,27 @@ def produce(products=None,
 
     print("Producers:")
     for i, ip in enumerate(exec_order):
-        print(
-            " ".join(
-                ["{0}.".format(i)]
-                + producers[ip].requires
-                + ["->", producers[ip].product]
-            )
-        )
+        print("{0}. ".format(i) + producers[ip].description)
 
-    def run_producer(producer):
-
-        pname = producer.full_product
-        print("Producing " + pname + "...")
-
-        inputs = {}
-        for req, full_req in zip(producer.input_names, producer.full_requires_expanded):
-            if len(full_req) > 1:
-                inputs[req] = [(x, record[x]) for x in full_req]
-            else:
-                inputs[req] = record[full_req[0]]
-
-        if producer.run.is_template:
-            for k in inputs:
-                inputs[k].subs = producer.subs
-
-        return producer.run(**inputs)
-
-    launched = [[False] for i in range(len(producers))]
-    start_times = [None] * len(producers)
-    elapsed_times = [None] * len(producers)
 
     # Loop over producers needed to get to the desired output products
     for i, ip in enumerate(exec_order):
 
         start_time = time.time()
 
-        record[producers[ip].full_product] = run_producer(producers[ip])
+        pname = producers[ip].product
+        print("Producing " + pname + "...")
+
+        record[producers[ip].product] = producers[ip].run(record)
 
         requirements_all = []
         for i, producer in enumerate(producers):
             if i in exec_order:
-                requirements_all += producer.expand_full_requires(flatten=True)
+                requirements_all += producer.flattened_requirements
 
         if time.time() - start_time > cache_time:
             print("Pruducer time longer than 2 seconds, caching product...")
-            pname = producers[ip].full_product
+            pname = producers[ip].product
             size = cache(record[pname], pname)
             if size > 0:
                print("Cached product {0}: {1}".format(pname, humanbytes(size)))
