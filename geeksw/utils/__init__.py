@@ -1,4 +1,6 @@
 from .reweighting import reweight1d
+from .awkward_utils import *
+from .np_utils import *
 
 
 def inv_mass_expr(expr):
