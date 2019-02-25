@@ -1,6 +1,8 @@
 def expand_wildcard(product, datasets):
     if not "*" in product:
         return [product]
+    if product.count('*') > 1:
+        raise ValueError("More than one wildcard in a product name is not supported!")
     return [product.replace("*", ds) for ds in datasets]
 
 
@@ -8,6 +10,16 @@ def replace_from_dict(s, subs):
     for t in subs:
         s = s.replace(t, subs[t])
     return s
+
+
+class ExpandedProduct(dict):
+
+    def __init__(self, products):
+        sortedkeys = sorted(products.keys(), key=lambda x:x.lower())
+        sorted_products = {}
+        for k in sortedkeys:
+            sorted_products[k] = products[k]
+        super().__init__(sorted_products)
 
 
 class ProducerWrapper(object):
@@ -18,6 +30,7 @@ class ProducerWrapper(object):
 
         self.description = " ".join(list(requirements.values()) + ["->", product])
 
+        self.datasets = datasets
         self.subs = subs
         self.product = working_dir + product
 
@@ -30,7 +43,7 @@ class ProducerWrapper(object):
         inputs = {}
         for k, req in self.requirements.items():
             if len(req) > 1:
-                inputs[k] = [(x, record[x]) for x in req]
+                inputs[k] = ExpandedProduct({self.datasets[i] : record[x] for i, x in enumerate(req)})
             else:
                 inputs[k] = record[req[0]]
 

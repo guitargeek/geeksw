@@ -2,6 +2,7 @@ import functools
 from concurrent.futures import ThreadPoolExecutor
 from ..utils.core import concatenate
 from .futures import MultiFuture
+from .ProducerWrapper import ExpandedProduct
 
 
 class StreamList(list):
@@ -12,6 +13,14 @@ class StreamList(list):
             super().__init__(product)
         else:
             super().__init__([product])
+
+        self._cached_aggregate = None
+
+    def aggregate(self):
+        if self._cached_aggregate is None:
+            return concatenate(self)
+        else:
+            return self._cached_aggregate
 
 
 def consumes(**requirements):
@@ -34,9 +43,14 @@ def one_producer(*product_names, stream=False):
     def one_wrapper(func):
         @functools.wraps(func)
         def producer_func(**inputs):
-            for k, v in inputs.items():
-                if isinstance(v, StreamList):
-                    inputs[k] =  concatenate(v)
+            for k1, product in inputs.items():
+                if isinstance(product, StreamList):
+                    inputs[k1] =  product.aggregate()
+                if isinstance(product, ExpandedProduct):
+                    for k2, subproduct in product.items():
+                        if isinstance(subproduct, StreamList):
+                            inputs[k1][k2] =  subproduct.aggregate()
+
             if stream:
                 return StreamList(func(**inputs))
             return func(**inputs)

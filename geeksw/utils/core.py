@@ -8,6 +8,8 @@ def concatenate(arrays):
     elif isinstance(arrays[0], np.ndarray):
         return np.concatenate(arrays)
     elif isinstance(arrays[0], pd.DataFrame):
-        return pd.concat(arrays)
+        df = pd.concat(arrays)
+        df.index = np.arange(len(df))
+        return df
     else:
         return arrays[0].concatenate(arrays[1:])
