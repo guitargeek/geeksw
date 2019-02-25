@@ -42,11 +42,10 @@ class Producer(object):
         self.product = replace_from_dict(self.product, subs)
         self.requires = [replace_from_dict(req, subs) for req in self.requires]
 
-        self.working_dir = working_dir
         self.datasets = datasets
 
-        self.full_product = self.working_dir + self.product
-        self.full_requires = [self.working_dir + req for req in self.requires]
+        self.full_product = working_dir + self.product
+        self.full_requires = [working_dir + req for req in self.requires]
         self.full_requires_expanded = self.expand_full_requires()
 
     def __eq__(self, other):

@@ -1,4 +1,3 @@
-import sys
 import os
 import pickle
 import inspect
@@ -10,19 +9,12 @@ import h5py
 import glob
 
 from .utils import *
-from .DependencyGraph import DependencyGraph
-from .Producers import Producer as GeekProducer
+from .dependencies import *
+from .Producers import Producer
 from .Producers import expand_wildcard
 
 
 cache_dir = ".geeksw_cache"
-
-
-class MetaInfo(object):
-
-    def __init__(self, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)
 
 
 def get_from_cache(product):
@@ -117,12 +109,13 @@ def get_required_producers(product, producer_funcs, datasets, record):
     i = np.argmax(scores)
 
     working_dir = product[: -len(matches[i].group)]
-    producers = [GeekProducer(producer_funcs[i], matches[i].subs, working_dir, datasets)]
+    producers = [Producer(producer_funcs[i], matches[i].subs, working_dir, datasets)]
 
     for i, req in enumerate(producers[0].expand_full_requires(flatten=True)):
         producers += get_required_producers(req, producer_funcs, datasets, record)
 
     return producers
+
 
 def produce(products=None,
             producers=[],
@@ -151,7 +144,7 @@ def produce(products=None,
 
     producers = list(set(producer_instances))
 
-    exec_order = DependencyGraph(producers).toposort()
+    exec_order = toposort(make_dependency_graph(producers))
 
     print("Producers:")
     for i, ip in enumerate(exec_order):
@@ -168,7 +161,6 @@ def produce(products=None,
         pname = producer.full_product
         print("Producing " + pname + "...")
 
-        working_dir = producer.working_dir
         inputs = {}
         for req, full_req in zip(producer.input_names, producer.full_requires_expanded):
             if len(full_req) > 1:
@@ -177,8 +169,8 @@ def produce(products=None,
                 inputs[req] = record[full_req[0]]
 
         if producer.run.is_template:
-            inputs["meta"] = MetaInfo(subs = producer.subs,
-                                      working_dir = producer.working_dir)
+            for k in inputs:
+                inputs[k].subs = producer.subs
 
         return producer.run(**inputs)
 

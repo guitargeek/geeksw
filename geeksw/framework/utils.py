@@ -1,8 +1,11 @@
 import os
+import sys
+
 
 def mkdir(path):
     if not os.path.exists(path):
         os.makedirs(path)
+
 
 def humanbytes(B):
     "Return the given bytes as a human friendly KB, MB, GB, or TB string"
@@ -22,6 +25,7 @@ def humanbytes(B):
         return "{0:.1f} GB".format(B / GB)
     elif TB <= B:
         return "{0:.1f} TB".format(B / TB)
+
 
 def load_module(name, path_to_file):
     if sys.version_info < (3, 0):
