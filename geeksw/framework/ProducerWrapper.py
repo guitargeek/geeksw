@@ -1,8 +1,3 @@
-import os.path
-import glob
-import itertools
-
-
 def expand_wildcard(product, datasets):
     if not "*" in product:
         return [product]

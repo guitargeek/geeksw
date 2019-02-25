@@ -1,21 +1,20 @@
+from collections import defaultdict
+
+
 def make_dependency_graph(producers):
 
-    requires_dict = {}
+    requires_dict = defaultdict(list)
     for i, p in enumerate(producers):
         for req in p.flattened_requirements:
-            if req not in requires_dict:
-                requires_dict[req] = []
-            requires_dict[req] += [i]
+            requires_dict[req].append(i)
 
     graph = {}
     for i, p in enumerate(producers):
         graph[i] = []
-        if not p.product in requires_dict:
-            continue
         for other in requires_dict[p.product]:
-            graph[i] += [other]
+            graph[i].append(other)
 
-    return dict(graph)
+    return graph
 
 
 def toposort(graph):

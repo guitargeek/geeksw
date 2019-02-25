@@ -10,8 +10,7 @@ import glob
 
 from .utils import *
 from .dependencies import *
-from .Producers import ProducerWrapper
-from .Producers import expand_wildcard
+from .ProducerWrapper import ProducerWrapper, expand_wildcard
 
 
 cache_dir = ".geeksw_cache"
@@ -61,35 +60,31 @@ def cache(obj, name):
         return -1
 
 
-class ProductMatch(object):
-    def __init__(self, product, producer):
+def match_product(product, func):
 
-        regex = re.sub("<[^<>]*>", "[^/]*", producer.product)
-        match = re.match(".*" + regex + "$", product)
+    regex = re.sub("<[^<>]*>", "[^/]*", func.product)
+    match = re.match(".*" + regex + "$", product)
 
-        if match is None:
-            self.group = None
-            self.subs = {}
-            self.score = 0
-            return
+    if match is None:
+        return None, 0
 
-        depth = producer.product.count("/")
+    depth = func.product.count("/")
 
-        # The matching pattern
-        self.group = "/".join(match.group().split("/")[-depth - 1 :])
-        # The "matching depth". Products which match deeper are resolving ambiguities.
-        self.score = self.group.count("/") + 1
+    # The matching pattern
+    group = "/".join(match.group().split("/")[-depth - 1 :])
+    # The "matching depth". Products which match deeper are resolving ambiguities.
+    score = group.count("/") + 1
 
-        # hotfix for problem in pattern matching:
-        # producers where the last identifier in the path is matched are usually to be favoured
-        if producer.product.split("/")[-1] == product.split("/")[-1]:
-            self.score = self.score + 100
+    # hotfix for problem in pattern matching:
+    # producer functions where the last identifier in the path is matched are usually to be favoured
+    if func.product.split("/")[-1] == product.split("/")[-1]:
+        score = score + 100
 
-        # The substitutions for the template specialization
-        self.subs = {}
-        for t, s in zip(producer.product.split("/"), self.group.split("/")):
-            if t != s:
-                self.subs[t] = s
+    # Penalize matching depth score with number of template specializations
+    # to give priority to full specializations.
+    score = score - len(group.split("/")) / 100.0
+
+    return group, score
 
 
 def get_required_producers(product, producer_funcs, datasets, record):
@@ -99,16 +94,19 @@ def get_required_producers(product, producer_funcs, datasets, record):
         record[product] = get_from_cache(product)
         return []
 
-    matches = [ProductMatch(product, f) for f in producer_funcs]
-    # Penalize matching depth score with number of template specializations
-    # to give priority to full specializations.
-    scores = [m.score - len(m.subs) / 100.0 for m in matches]
+    groups, scores = zip(*[match_product(product, f) for f in producer_funcs])
+
     if max(scores) == 0:
         return []
     i = np.argmax(scores)
 
-    working_dir = product[: -len(matches[i].group)]
-    producers = [ProducerWrapper(producer_funcs[i], matches[i].subs, working_dir, datasets)]
+    func, group = producer_funcs[i], groups[i]
+
+    # The substitutions for the template specialization
+    subs = {t : s for t, s in zip(func.product.split("/"), group.split("/")) if t!= s}
+
+    working_dir = product[: -len(group)]
+    producers = [ProducerWrapper(func, subs, working_dir, datasets)]
 
     for req in producers[0].flattened_requirements:
         producers += get_required_producers(req, producer_funcs, datasets, record)
