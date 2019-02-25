@@ -1,19 +1,20 @@
 import functools
 from .futures import MultiFuture
 from concurrent.futures import ThreadPoolExecutor
+from geeksw.utils.core import concatenate
 
 
 class StreamList(list):
     """Class to replace a basic list for streamed products
     """
     def __init__(self, product):
-        if type(product) == list:
+        if isinstance(product, list):
             super().__init__(product)
         else:
             super().__init__([product])
 
 
-def produces(*product_names):
+def produces(*product_names, stream=False):
 
     if len(product_names) > 1:
         raise ValueError("Producers functions with more than one product not supported yet!")
@@ -22,9 +23,10 @@ def produces(*product_names):
     def wrapper(func):
         @functools.wraps(func)
         def producer_func(**inputs):
+            if stream:
+                return StreamList(func(**inputs))
             return func(**inputs)
 
-        # For the hash, maybe get inspired by Parsl
         producer_func.product = product_name
         is_template = "<" in product_name or ">" in product_name
         producer_func.is_template = is_template
@@ -46,54 +48,39 @@ def consumes(**requirements):
     return wrapper
 
 
-def identity_wrapper(func):
-    @functools.wraps(func)
-    def producer_func(**inputs):
-        return func(**inputs)
-    return producer_func
-
-
-# Nothing special for now, it's the users responsability to get the output in the right shape
-global_to_global = identity_wrapper
-
-
-def global_to_stream(func):
-    @functools.wraps(func)
-    def producer_func(**inputs):
-        return StreamList(func(**inputs))
-    return producer_func
-
-
-def stream_to_global(func):
-    @functools.wraps(func)
-    def producer_func(**inputs):
-        for v in inputs.values():
-            if hasattr(v, "__len__"):
-                n = len(v)
-                break
-        streamed_inputs = [{k : v[i] for k, v in inputs.items() if k != "meta"} for i in range(n)]
-        if "meta" in inputs.keys():
-            for i in range(len(streamed_inputs)):
-                streamed_inputs[i]["meta"] = inputs["meta"]
-        executor = ThreadPoolExecutor(max_workers=32)
-        return MultiFuture([executor.submit(func, **streamed_inputs[i]) for i in range(n)]).result()
-
-    return producer_func
-
-
-def stream_to_stream(func):
+def one(func):
     @functools.wraps(func)
     def producer_func(**inputs):
         for k, v in inputs.items():
-            if hasattr(v, "__len__"):
-                n = len(v)
-                break
-        streamed_inputs = [{k : v[i] for k, v in inputs.items() if k != "meta"} for i in range(n)]
-        if "meta" in inputs.keys():
-            for i in range(len(streamed_inputs)):
-                streamed_inputs[i]["meta"] = inputs["meta"]
-        executor = ThreadPoolExecutor(max_workers=32)
-        results = MultiFuture([executor.submit(func, **streamed_inputs[i]) for i in range(n)]).result()
+            if isinstance(v, StreamList):
+                inputs[k] =  concatenate(v)
+        return func(**inputs)
+
+    return producer_func
+
+
+def stream(func):
+    @functools.wraps(func)
+    def producer_func(**inputs):
+        stream_list_lengths = set([len(v) for v in inputs.values() if isinstance(v, StreamList)])
+
+        if len(stream_list_lengths) == 0:
+            # in this case, it might as well be a "one" producer
+            return func(**inputs)
+        elif len(stream_list_lengths) > 1:
+            raise ValueError("A stream produces can't take multiple stream inputs of different lengths!")
+
+        n = stream_list_lengths.pop()
+
+        sinputs = [dict() for k in inputs]
+
+        for k, v in inputs.items():
+            isstream = isinstance(v, StreamList)
+            for i in range(n):
+                sinputs[i][k] = v[i] if isstream else v
+
+        with ThreadPoolExecutor(max_workers=32) as executor:
+            results = MultiFuture([executor.submit(func, **sinputs[i]) for i in range(n)]).result()
         return StreamList(results)
 
     return producer_func
