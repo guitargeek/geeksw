@@ -49,7 +49,10 @@ class ProducerWrapper(object):
 
         if self.func.is_template:
             for k in inputs:
-                inputs[k].subs = self.subs
+                try:
+                    inputs[k].subs = self.subs
+                except:
+                    pass
 
         return self.func(**inputs)
 
