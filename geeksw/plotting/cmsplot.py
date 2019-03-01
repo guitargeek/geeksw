@@ -52,18 +52,26 @@ def ylabel(*args, **kwargs):
     return _ylabel(*args, **kwargs)
 
 def lumitext(s):
-    return text(xlim()[0]+(xlim()[1] - xlim()[0]) * 1,
-           ylim()[0]+(ylim()[1] - ylim()[0]) * 1.025, s,
-           fontweight="regular", horizontalalignment='right', fontsize=18)
+    x0, x1 = xlim()
+    y0, y1 = ylim()
+    return text(x0+(x1 - x0) * 1, y0+(y1 - y0) * 1.025, s,
+                fontweight="regular", horizontalalignment='right', fontsize=18)
 
-def cmstext(s):
+def cmstext(s, loc=0):
     s1, *s2 = s.split(" ")
     s2 = " ".join(s2)
-    text(xlim()[0]+(xlim()[1] - xlim()[0]) * 0.04,
-         ylim()[0]+(ylim()[1] - ylim()[0]) * 0.84, s2, style="italic",
-         fontsize=16.5)
-    return text(xlim()[0]+(xlim()[1] - xlim()[0]) * 0.04,
-                ylim()[0]+(ylim()[1] - ylim()[0]) * 0.92, s1, fontweight="bold",
-                fontsize=22)
+    x0, x1 = xlim()
+    y0, y1 = ylim()
+    if loc == 0:
+        text(x0+(x1 - x0) * 0.04, y0+(y1 - y0) * 0.84, s2, style="italic", fontsize=16.5)
+        return text(x0+(x1 - x0) * 0.04, y0+(y1 - y0) * 0.92, s1, fontweight="bold", fontsize=22)
+    if loc == 1:
+        text(x1-(x1 - x0) * 0.04, y0+(y1 - y0) * 0.84, s2,
+             style="italic", fontsize=16.5, horizontalalignment="right")
+        return text(x1-(x1 - x0) * 0.04, y0+(y1 - y0) * 0.92, s1,
+                    fontweight="bold", fontsize=22, horizontalalignment="right")
+    if loc == 2:
+        text(x0+(x1 - x0) * 0.115, y0+(y1 - y0) * 1.025, s2, style="italic", fontsize=16.5)
+        return text(x0+(x1 - x0) * 0, y0+(y1 - y0) * 1.025, s1, fontweight="bold", fontsize=22)
 
 _initialize()
