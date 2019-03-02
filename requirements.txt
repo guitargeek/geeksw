@@ -1,4 +1,5 @@
 awkward
+futures
 h5py
 matplotlib
 numpy
