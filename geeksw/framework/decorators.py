@@ -35,10 +35,10 @@ def consumes(**requirements):
     return wrapper
 
 
-def one_producer(*product_names, stream=False):
-    if len(product_names) > 1:
+def one_producer(product_names, stream=False):
+    if isinstance(product_names, list) and len(product_names) > 1:
         raise ValueError("Producers functions with more than one product not supported yet!")
-    product_name = product_names[0]
+    product_name = product_names
 
     def one_wrapper(func):
         @functools.wraps(func)
