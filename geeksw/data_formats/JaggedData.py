@@ -11,9 +11,7 @@ class JaggedData(object):
         for col_name, arr in data.items():
             if not isinstance(arr, awkward.JaggedArray):
                 class_name = self.__class__.__name__
-                raise TypeError(
-                    "Items of " + class_name + "have to be of class JaggedArray!"
-                )
+                raise TypeError("Items of " + class_name + "have to be of class JaggedArray!")
             self._data.append(arr)
             self._columns.append(col_name)
 
@@ -39,13 +37,7 @@ class JaggedData(object):
 
         for col, arr in zip(self._columns, self._data):
             if not (self._data[0].offsets == arr.offsets).all():
-                raise ValueError(
-                    "Column "
-                    + col
-                    + " is not of same shape as "
-                    + self._columns[0]
-                    + "!"
-                )
+                raise ValueError("Column " + col + " is not of same shape as " + self._columns[0] + "!")
 
     def __getitem__(self, key):
         return self._data[self._columns.index(key)]
@@ -53,9 +45,7 @@ class JaggedData(object):
     def __setitem__(self, key, item):
         if not isinstance(item, awkward.JaggedArray):
             class_name = self.__class__.__name__
-            raise TypeError(
-                "Items of " + class_name + "have to be of class JaggedArray!"
-            )
+            raise TypeError("Items of " + class_name + "have to be of class JaggedArray!")
         self._columns.append(key)
         self._data.append(item)
         self._validate()

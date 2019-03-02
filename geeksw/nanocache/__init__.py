@@ -32,5 +32,6 @@ def load_datasets(names, cache=ScratchCache(), server="polgrid4.in2p3.fr"):
 
     return UprootIOWrapper(datasets=datasets, cache=cache)
 
+
 def load_dataset(name, cache=ScratchCache(), server="polgrid4.in2p3.fr"):
     return load_datasets([name], cache=cache, server=server)

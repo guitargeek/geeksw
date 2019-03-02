@@ -37,17 +37,7 @@ class ReweightingTests(unittest.TestCase):
         # print(np.polyfit(bins[:-1], h, deg=1))
 
         # Calculate the reduced chi2 of the flat hypethesis
-        chi2 = (
-            np.sum(
-                (
-                    np.divide(
-                        h_w - 1, h_w * uncert, out=np.zeros_like(h_w), where=h_w != 0
-                    )
-                )
-                ** 2
-            )
-            / 200
-        )
+        chi2 = np.sum((np.divide(h_w - 1, h_w * uncert, out=np.zeros_like(h_w), where=h_w != 0)) ** 2) / 200
 
         print("")
         print("Reduced chi2 of flat hypethesis: {:.4f}".format(chi2))
@@ -78,9 +68,7 @@ class ReweightingTests(unittest.TestCase):
         h_sig, _ = np.histogram(sig, bins=bins, weights=w_sig)
         h_bkg, _ = np.histogram(bkg, bins=bins, weights=w_bkg)
 
-        pulls = np.divide(
-            h_sig - h_bkg, h_bkg ** 0.5, out=np.zeros_like(h_bkg), where=h_bkg != 0
-        )
+        pulls = np.divide(h_sig - h_bkg, h_bkg ** 0.5, out=np.zeros_like(h_bkg), where=h_bkg != 0)
         mu, std = np.mean(pulls), np.std(pulls)
 
         print("")

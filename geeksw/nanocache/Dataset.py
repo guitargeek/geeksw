@@ -10,24 +10,23 @@ def list_files(dataset_name):
     cmd = 'dasgoclient -query="file dataset={0} system=phedex"'.format(dataset_name)
     file_list = os.popen(cmd).read()
     file_list = [f.strip() for f in file_list.split("\n") if ".root" in f]
-    return file_list.sort()
+    file_list.sort()
+    return file_list
 
 
 def open_files(dataset, server):
     files = list_files(dataset)
     opened_files = []
     for f in files:
-        path = "root://"+server+"/"+f
+        path = "root://" + server + "/" + f
         try:
-            print("Opening a file directly")
             opened_files.append(uproot.open(path))
         except:
-            IOError("The file "+path+" could not be opened. Is it available on this site?")
+            IOError("The file " + path + " could not be opened. Is it available on this site?")
     return opened_files
 
 
 class Dataset(object):
-
     def __init__(self, name, server, lazy=False, check=False):
         self._name = name
         self._server = server

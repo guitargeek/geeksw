@@ -12,12 +12,18 @@ Analyzing CMS data in Python is made possible by powerful standard libraries lik
 
 The following sections will give an overview on the features of geeksw. It is targeted to have as much documentation within the code as possible, but the main way how features are explained are example notebooks in the dedicated examples directory.
 
-## Plotting
+## Submodules
 
-## Analysis framework
+### Plotting
 
-## Physics tools
+### Analysis framework
 
-## Utilities
+### Physics tools
 
-## NanoAOD data loading
+### Utilities
+
+### NanoAOD data loading
+
+## Development notes
+
+Plese format the edited python sources with [black](https://github.com/ambv/black) before making any pull request, setting the `--line-length 120` argument.

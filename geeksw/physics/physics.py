@@ -28,13 +28,13 @@ def zpairs(particles, z_mass=91.19, return_by_charge=False):
         charge = particles["charge"]
         charge_combinations = charge.cross(charge, nested=True)
         pair_charges = charge_combinations.i0 + charge_combinations.i1
-        pair_masses.content.content *= (pair_charges.content.content == 0)
+        pair_masses.content.content *= pair_charges.content.content == 0
 
     if "flavour" in particles.columns:
         flavour = particles["flavour"]
         flavour_combinations = flavour.cross(flavour, nested=True)
         pair_flavours = flavour_combinations.i0 - flavour_combinations.i1
-        pair_masses.content.content *= (pair_flavours.content.content == 0)
+        pair_masses.content.content *= pair_flavours.content.content == 0
 
     z_residues = np.abs(pair_masses - z_mass)
 
@@ -42,7 +42,7 @@ def zpairs(particles, z_mass=91.19, return_by_charge=False):
 
     is_in_best_pair = (z_residues == best_residues).any()
 
-    is_in_best_pair = np.logical_and(is_in_best_pair, is_in_best_pair.counts >=2)
+    is_in_best_pair = np.logical_and(is_in_best_pair, is_in_best_pair.counts >= 2)
 
     is_positive_in_best_pair = np.logical_and(charge > 0, is_in_best_pair)
     is_negative_in_best_pair = np.logical_and(charge <= 0, is_in_best_pair)
@@ -65,9 +65,6 @@ def crossclean(particles, others, delta_r=0.4):
     eta_combs = particles.eta.cross(others.eta, nested=True)
     phi_combs = particles.phi.cross(others.phi, nested=True)
 
-    mask = ~(
-        (phi_combs.i1 - phi_combs.i0) ** 2 + (eta_combs.i1 - eta_combs.i0) ** 2
-        < delta_r ** 2
-    ).any()
+    mask = ~((phi_combs.i1 - phi_combs.i0) ** 2 + (eta_combs.i1 - eta_combs.i0) ** 2 < delta_r ** 2).any()
 
     return particles[mask]

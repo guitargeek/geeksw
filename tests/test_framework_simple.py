@@ -35,16 +35,12 @@ producers = [a, b, c, d]
 
 
 class GeekswTests(unittest.TestCase):
-
     def test_geek_run(self):
 
         datasets = ["/data1", "/data2", "/data3"]
-        products  = ["/*/win/win"]
+        products = ["/*/win/win"]
 
-        record = fwk.produce(products=products,
-                             producers=producers,
-                             datasets=datasets,
-                             verbosity=0)
+        record = fwk.produce(products=products, producers=producers, datasets=datasets, verbosity=0)
 
         self.assertTrue("/data1/win/win" in record.keys())
         self.assertTrue("/data2/win/win" in record.keys())

@@ -5,6 +5,7 @@ import awkward
 
 # Declare producers for this test
 
+
 @fwk.one_producer("trees", stream=True)
 def load_tree():
 
@@ -33,25 +34,16 @@ def merge_branch(data):
     return data
 
 
-producers = [
-        load_tree,
-        load_branch,
-        merge_branch,
-        ]
+producers = [load_tree, load_branch, merge_branch]
 
 
 class GeekswTests(unittest.TestCase):
-
     def test_geek_run(self):
 
         datasets = ["/WWZ"]
-        products  = ["/WWZ/merged"]
+        products = ["/WWZ/merged"]
 
-        record = fwk.produce(products=products,
-                             producers=producers,
-                             datasets=datasets,
-                             max_workers=32,
-                             verbosity=0)
+        record = fwk.produce(products=products, producers=producers, datasets=datasets, max_workers=32, verbosity=0)
 
         print("Length of final record:")
         print(len(record["WWZ/merged"]))

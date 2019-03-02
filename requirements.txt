@@ -5,4 +5,4 @@ matplotlib
 numpy
 pandas
 uproot
-uproot-methods
+uproot - methods

@@ -5,12 +5,11 @@ from ..utils.core import concatenate
 
 
 class UprootIOWrapper(object):
-
     def __init__(self, datasets=None, cache=None, verbose=False):
         self._verbose = verbose
         self._datasets = datasets
         self._working_dir = ""
-        self._cache = cache # the persistent cache
+        self._cache = cache  # the persistent cache
 
     def array(self, key):
         full_key = os.path.join(self._working_dir, key)

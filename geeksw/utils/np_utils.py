@@ -4,7 +4,7 @@
 import numpy as np
 
 
-def to_categorical(y, num_classes=None, dtype='float32'):
+def to_categorical(y, num_classes=None, dtype="float32"):
     """Converts a class vector (integers) to binary class matrix.
 
     E.g. for use with categorical_crossentropy.
@@ -38,7 +38,7 @@ def to_categorical(y, num_classes=None, dtype='float32'):
     ```
     """
 
-    y = np.array(y, dtype='int')
+    y = np.array(y, dtype="int")
     input_shape = y.shape
     if input_shape and input_shape[-1] == 1 and len(input_shape) > 1:
         input_shape = tuple(input_shape[:-1])

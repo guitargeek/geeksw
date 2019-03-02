@@ -5,9 +5,9 @@ def rmseff(x, c=0.68):
     """Compute half-width of the shortest interval
     containing a fraction 'c' of items in a 1D array.
     """
-    x = np.sort(x, kind='mergesort')
-    m = int(c*len(x)) + 1
-    return np.min(x_sorted[m:] - x_sorted[:-m])/2.0
+    x = np.sort(x, kind="mergesort")
+    m = int(c * len(x)) + 1
+    return np.min(x_sorted[m:] - x_sorted[:-m]) / 2.0
 
 
 def inv_mass_expr(expr):
@@ -25,9 +25,7 @@ def inv_mass_expr(expr):
             # just assume its a massless particle
             if len(tmp) == 3:
                 tmp = [tmp[0] + "*cosh(" + tmp[1] + ")"] + tmp
-            x.append(
-                {"e": tmp[0], "pt": tmp[1], "eta": tmp[2], "phi": tmp[3], "sign": s}
-            )
+            x.append({"e": tmp[0], "pt": tmp[1], "eta": tmp[2], "phi": tmp[3], "sign": s})
             s = "+"
 
     # Build the expression for the invariant mass

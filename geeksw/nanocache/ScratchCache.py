@@ -4,7 +4,6 @@ import h5py
 
 
 class ScratchCache(object):
-
     def __init__(self, cache_dir="/scratch/.nanocache/branches"):
         self._cache_dir = cache_dir
 
@@ -19,7 +18,7 @@ class ScratchCache(object):
 
     def __setitem__(self, key, item):
         file_name = self._get_file_name(key)
-        with h5py.File(file_name, 'w') as hf:
+        with h5py.File(file_name, "w") as hf:
             ah5 = awkward.hdf5(hf)
             ah5[key] = item
 
@@ -32,7 +31,7 @@ class ScratchCache(object):
         file_name = self._get_file_name(key)
 
         if not key in self:
-            raise KeyError(key +"not found in scratch cache.")
+            raise KeyError(key + "not found in scratch cache.")
 
         with h5py.File(file_name) as hf:
             ah5 = awkward.hdf5(hf)

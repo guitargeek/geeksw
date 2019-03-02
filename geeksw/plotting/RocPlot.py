@@ -10,23 +10,24 @@ if "plt" not in sys.modules:
 
 
 class RocPlot(object):
+    def __init__(
+        self,
+        logscale=False,
+        xlabel=None,
+        ylabel=None,
+        xlim=None,
+        ylim=None,
+        rlim=None,
+        height_ratios=[2, 1],
+        percent=False,
+        grid=False,
+        ncol=1,
+    ):
 
-    def __init__(self,
-                 logscale=False,
-                 xlabel=None,
-                 ylabel=None,
-                 xlim=None,
-                 ylim=None,
-                 rlim=None,
-                 height_ratios=[2,1],
-                 percent=False,
-                 grid=False,
-                 ncol=1):
-
-        self.gs = gridspec.GridSpec(2, 1, height_ratios=height_ratios) 
+        self.gs = gridspec.GridSpec(2, 1, height_ratios=height_ratios)
 
         self.axis = plt.subplot(self.gs[0])
-        self.axr  = plt.subplot(self.gs[1])
+        self.axr = plt.subplot(self.gs[1])
 
         self.gs.update(wspace=0.025, hspace=0.075)
         plt.setp(self.axis.get_xticklabels(), visible=False)
@@ -47,8 +48,8 @@ class RocPlot(object):
             ylabel = ylabel + " [%]"
 
         self._logscale = logscale
-        self._percent  = percent
-        self._scale    = 1 + 99 * percent
+        self._percent = percent
+        self._scale = 1 + 99 * percent
 
         self.axis.set_ylabel(ylabel)
         self.axr.set_xlabel(xlabel)
@@ -57,15 +58,15 @@ class RocPlot(object):
         self.axis.grid(grid)
         self.axr.grid(grid)
 
-        self.axis.set_xlim([x*self._scale for x in xlim])
-        self.axr.set_xlim([x*self._scale for x in xlim])
+        self.axis.set_xlim([x * self._scale for x in xlim])
+        self.axr.set_xlim([x * self._scale for x in xlim])
         if not ylim is None:
-            self.axis.set_ylim([y*self._scale for y in ylim])
+            self.axis.set_ylim([y * self._scale for y in ylim])
         if not rlim is None:
             self.axr.set_ylim(rlim)
 
         self.auc = []
-        
+
         self._ncol = ncol
 
         self._plotted_first = False
@@ -76,7 +77,7 @@ class RocPlot(object):
 
         self.auc.append(metrics.roc_auc_score(y_true, y_score))
 
-        if not hasattr(self, 'fpr_ref'):
+        if not hasattr(self, "fpr_ref"):
             self.fpr_ref = fpr
             self.tpr_ref = tpr
 
@@ -90,8 +91,8 @@ class RocPlot(object):
             r = np.ones(len(tpr))
             self._plotted_first = True
         else:
-            r = fpr/np.interp(tpr, self.tpr_ref, self.fpr_ref)
-            
+            r = fpr / np.interp(tpr, self.tpr_ref, self.fpr_ref)
+
         self.axr.plot(tpr[sel] * self._scale, r[sel], **kwargs)
 
         self.axis.legend(loc="upper left", ncol=self._ncol)

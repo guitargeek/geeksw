@@ -24,7 +24,7 @@ def get_from_cache(product):
     if os.path.isfile(cache_file_name):
         return pickle.load(open(cache_file_name, "rb"))
 
-    raise ValueError("Product "+product+" not found in cache!")
+    raise ValueError("Product " + product + " not found in cache!")
 
 
 def load_producers(producers_path):
@@ -56,7 +56,7 @@ def cache(obj, name):
             pickle.dump(obj, f)
         return os.path.getsize(file_name)
     except pickle.PicklingError as e:
-        print("Product "+name+" could not be pickled.")
+        print("Product " + name + " could not be pickled.")
         return -1
 
 
@@ -103,7 +103,7 @@ def get_required_producers(product, producer_funcs, datasets, record):
     func, group = producer_funcs[i], groups[i]
 
     # The substitutions for the template specialization
-    subs = {t : s for t, s in zip(func.product.split("/"), group.split("/")) if t!= s}
+    subs = {t: s for t, s in zip(func.product.split("/"), group.split("/")) if t != s}
 
     working_dir = product[: -len(group)]
     producers = [ProducerWrapper(func, subs, working_dir, datasets)]
@@ -114,13 +114,7 @@ def get_required_producers(product, producer_funcs, datasets, record):
     return producers
 
 
-def produce(products=None,
-            producers=[],
-            datasets=None,
-            max_workers=32,
-            cache_time=2,
-            verbosity=1,
-    ):
+def produce(products=None, producers=[], datasets=None, max_workers=32, cache_time=2, verbosity=1):
 
     target_products = products
 
@@ -149,7 +143,6 @@ def produce(products=None,
         for i, ip in enumerate(exec_order):
             print("{0}. ".format(i) + producers[ip].description)
 
-
     # Loop over producers needed to get to the desired output products
     for i, ip in enumerate(exec_order):
 
@@ -171,7 +164,7 @@ def produce(products=None,
             pname = producers[ip].product
             size = cache(record[pname], pname)
             if size > 0:
-               print("Cached product {0}: {1}".format(pname, humanbytes(size)))
+                print("Cached product {0}: {1}".format(pname, humanbytes(size)))
 
         for key in list(record.keys()):
             if key not in requirements_all and key not in target_products:

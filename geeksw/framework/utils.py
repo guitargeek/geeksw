@@ -43,5 +43,3 @@ def load_module(name, path_to_file):
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         return module
-
-

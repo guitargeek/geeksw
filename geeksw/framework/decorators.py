@@ -8,6 +8,7 @@ from .ProducerWrapper import ExpandedProduct
 class StreamList(list):
     """Class to replace a basic list for streamed products
     """
+
     def __init__(self, product):
         if isinstance(product, list):
             super(StreamList, self).__init__(product)
@@ -32,6 +33,7 @@ def consumes(**requirements):
         # For the hash, maybe get inspired by Parsl
         producer_func.requirements = requirements
         return producer_func
+
     return wrapper
 
 
@@ -45,11 +47,11 @@ def one_producer(product_names, stream=False):
         def producer_func(**inputs):
             for k1, product in inputs.items():
                 if isinstance(product, StreamList):
-                    inputs[k1] =  product.aggregate()
+                    inputs[k1] = product.aggregate()
                 if isinstance(product, ExpandedProduct):
                     for k2, subproduct in product.items():
                         if isinstance(subproduct, StreamList):
-                            inputs[k1][k2] =  subproduct.aggregate()
+                            inputs[k1][k2] = subproduct.aggregate()
 
             if stream:
                 return StreamList(func(**inputs))
@@ -61,6 +63,7 @@ def one_producer(product_names, stream=False):
         if not hasattr(producer_func, "requirements"):
             producer_func.requirements = {}
         return producer_func
+
     return one_wrapper
 
 
@@ -100,4 +103,5 @@ def stream_producer(*product_names):
         if not hasattr(producer_func, "requirements"):
             producer_func.requirements = {}
         return producer_func
+
     return stream_wrapper

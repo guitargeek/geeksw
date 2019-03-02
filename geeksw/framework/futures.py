@@ -1,5 +1,4 @@
 class MultiFuture(object):
-
     def __init__(self, futures, merger=None):
 
         self.merger = merger
