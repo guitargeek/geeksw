@@ -10,9 +10,9 @@ class StreamList(list):
     """
     def __init__(self, product):
         if isinstance(product, list):
-            super().__init__(product)
+            super(StreamList, self).__init__(product)
         else:
-            super().__init__([product])
+            super(StreamList, self).__init__([product])
 
         self._cached_aggregate = None
 
