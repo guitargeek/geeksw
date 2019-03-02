@@ -1,6 +1,7 @@
-numpy
-matplotlib
 awkward
 h5py
+matplotlib
+numpy
+pandas
 uproot
 uproot-methods
