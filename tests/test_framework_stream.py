@@ -8,7 +8,7 @@ import awkward
 @fwk.one_producer("trees", stream=True)
 def load_tree():
 
-    trees = [uproot.open(f"tests/datasets/WWZ/nano_{i}.root")["Events"] for i in range(4)]
+    trees = [uproot.open("tests/datasets/WWZ/nano_{0}.root".format(i))["Events"] for i in range(4)]
 
     print("Total number of events:")
     print(sum([len(t) for t in trees]))
