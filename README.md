@@ -2,6 +2,8 @@
 </br>
 Python package to facilitate High Energy Physics analysis work with focus on the CMS experiment.
 
+[![Build Status](https://travis-ci.com/guitargeek/geeksw.svg?branch=master)](https://travis-ci.com/guitargeek/geeksw)
+
 ## Introduction
 
 In the CMS experiment, battle tested workflows create user friendly datasets for all collaborators to analyze. A well maintained software release, called [CMSSW](https://github.com/cms-sw/cmssw), provides all the (mostly C++) code to do so. However, after all the event data is ready in columnar data formats like [NanoAOD](https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookNanoAOD), there is much less consensus within the collaboration on the framework to analyze this data with. Many groups have their own C++ based analysis frameworks which plug into CMSSW, but in times where the Python ecosystem for data analysis is so vast and powerful, some people believe that all analysis work should be done with Python libraries.
