@@ -82,11 +82,12 @@ def stream_producer(*product_names):
 
             n = stream_list_lengths.pop()
 
-            sinputs = [dict() for k in inputs]
+            sinputs = [dict() for k in range(n)]
 
             for k, v in inputs.items():
                 isstream = isinstance(v, StreamList)
                 for i in range(n):
+                    print(i, k)
                     sinputs[i][k] = v[i] if isstream else v
 
             with ThreadPoolExecutor(max_workers=32) as executor:

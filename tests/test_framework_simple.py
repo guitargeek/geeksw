@@ -1,31 +1,31 @@
 import unittest
-import geeksw.framework as geeksw
-from geeksw.framework import produces, consumes
 
-# Declare producers for this test
 
-@produces("lin")
-@consumes(foo="foo", jenkins="jenkins")
+import geeksw.framework as fwk
+
+
+@fwk.one_producer("lin")
+@fwk.consumes(foo="foo", jenkins="jenkins")
 def a(foo, jenkins):
 
     return "Lin" + foo.title() + jenkins.title()
 
 
-@produces("jenkins")
-@consumes(foo="foo")
+@fwk.one_producer("jenkins")
+@fwk.consumes(foo="foo")
 def b(foo):
 
     return foo + "Jenkins"
 
 
-@produces("win/win")
-@consumes(foo="foo", jenkins="jenkins")
+@fwk.one_producer("win/win")
+@fwk.consumes(foo="foo", jenkins="jenkins")
 def c(foo, jenkins):
 
     return "Win" + foo.title() + jenkins.title()
 
 
-@produces("foo")
+@fwk.one_producer("foo")
 def d():
 
     return "foo"
@@ -41,7 +41,10 @@ class GeekswTests(unittest.TestCase):
         datasets = ["/data1", "/data2", "/data3"]
         products  = ["/*/win/win"]
 
-        record = geeksw.produce(products=products, producers=producers, datasets=datasets)
+        record = fwk.produce(products=products,
+                             producers=producers,
+                             datasets=datasets,
+                             verbosity=0)
 
         self.assertTrue("/data1/win/win" in record.keys())
         self.assertTrue("/data2/win/win" in record.keys())

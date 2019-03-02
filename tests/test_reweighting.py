@@ -5,6 +5,9 @@ import numpy as np
 from geeksw.utils import reweighting
 
 
+np.random.seed(100)
+
+
 class ReweightingTests(unittest.TestCase):
     def test_reweight1d_to_flat(self):
         """Test the 1d reweighting to a flat distribution.
@@ -89,8 +92,5 @@ class ReweightingTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
-    # Set random seed
-    np.random.seed(100)
 
     unittest.main(verbosity=2)

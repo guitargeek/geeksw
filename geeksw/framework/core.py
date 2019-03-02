@@ -119,6 +119,7 @@ def produce(products=None,
             datasets=None,
             max_workers=32,
             cache_time=2,
+            verbosity=1,
     ):
 
     target_products = products
@@ -143,9 +144,10 @@ def produce(products=None,
 
     exec_order = toposort(make_dependency_graph(producers))
 
-    print("Producers:")
-    for i, ip in enumerate(exec_order):
-        print("{0}. ".format(i) + producers[ip].description)
+    if verbosity > 0:
+        print("Producers:")
+        for i, ip in enumerate(exec_order):
+            print("{0}. ".format(i) + producers[ip].description)
 
 
     # Loop over producers needed to get to the desired output products
@@ -154,7 +156,8 @@ def produce(products=None,
         start_time = time.time()
 
         pname = producers[ip].product
-        print("Producing " + pname + "...")
+        if verbosity > 0:
+            print("Producing " + pname + "...")
 
         record[producers[ip].product] = producers[ip].run(record)
 
