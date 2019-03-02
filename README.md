@@ -1,6 +1,6 @@
 ![Geeksw](res/geeksw.png?raw=true "Geeksw logo")
 </br>
-Python package to facilitate analysis work in in the CMS collaboration.
+Python package to facilitate High Energy Physics analysis work with focus on the CMS experiment.
 
 ## Introduction
 
