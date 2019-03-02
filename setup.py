@@ -12,5 +12,10 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    install_requires=["numpy", "matplotlib", "awkward", "h5py"],
+    install_requires=["numpy",
+                      "matplotlib",
+                      "awkward",
+                      "h5py",
+                      "uproot",
+                      "uproot-methods"],
 )

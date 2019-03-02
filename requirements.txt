@@ -1,0 +1,6 @@
+numpy
+matplotlib
+awkward
+h5py
+uproot
+uproot-methods
