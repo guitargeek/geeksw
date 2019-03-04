@@ -12,6 +12,15 @@ Analyzing CMS data in Python is made possible by powerful standard libraries lik
 
 The following sections will give an overview on the features of geeksw. It is targeted to have as much documentation within the code as possible, but the main way how features are explained are example notebooks in the dedicated examples directory.
 
+## Installation
+
+The geeksw framework can be installed like any other python package:
+```
+git clone git@github.com:guitargeek/geeksw.git
+cd geeksw
+pip install --user .
+```
+
 ## Submodules
 
 ### Plotting
@@ -23,6 +32,10 @@ The following sections will give an overview on the features of geeksw. It is ta
 ### Utilities
 
 ### NanoAOD data loading
+
+### Fitting
+
+A few tools are provided to make the most out of [scipy.optimize.curve_fit](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.curve_fit.html). It is possible to automatically obtain the Jacobian to any fitting function with using pytorch, which is wrapped by the [wrap_jac](https://github.com/guitargeek/geeksw/blob/master/geeksw/fitting/utils.py#L5) function. An example of this can be found in a [jupyter notebook](https://github.com/guitargeek/geeksw/blob/master/examples/fitting_with_jacobian.ipynb).
 
 ## Developer guide
 
