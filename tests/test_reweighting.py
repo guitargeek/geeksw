@@ -8,7 +8,7 @@ from geeksw.utils import reweighting
 np.random.seed(100)
 
 
-class ReweightingTests(unittest.TestCase):
+class Test(unittest.TestCase):
     def test_reweight1d_to_flat(self):
         """Test the 1d reweighting to a flat distribution.
         """
@@ -32,7 +32,8 @@ class ReweightingTests(unittest.TestCase):
         h_w, _ = np.histogram(sig, bins=bins, weights=weights)
 
         # Calculate the relative uncertainty
-        uncert = 1 / np.sqrt(h)
+        # we equate zero counts to one count to get a finite relaive uncertainty
+        uncert = 1 / np.sqrt(np.clip(h, a_min=1, a_max=None))
 
         # print(np.polyfit(bins[:-1], h, deg=1))
 

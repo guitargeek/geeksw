@@ -8,6 +8,7 @@ def _wrap_numpy_torch(numpy_f, torch_f):
             if isinstance(x, torch.Tensor):
                 return torch_f(*args, **kwargs)
         return numpy_f(*args, **kwargs)
+
     return wrapped_f
 
 

@@ -37,7 +37,7 @@ def merge_branch(data):
 producers = [load_tree, load_branch, merge_branch]
 
 
-class GeekswTests(unittest.TestCase):
+class Test(unittest.TestCase):
     def test_geek_run(self):
 
         datasets = ["/WWZ"]

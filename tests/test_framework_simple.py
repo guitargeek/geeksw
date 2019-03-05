@@ -34,7 +34,7 @@ def d():
 producers = [a, b, c, d]
 
 
-class GeekswTests(unittest.TestCase):
+class Test(unittest.TestCase):
     def test_geek_run(self):
 
         datasets = ["/data1", "/data2", "/data3"]
