@@ -4,8 +4,19 @@ import uproot
 import awkward
 import pandas as pd
 import numpy as np
+import shutil
 
-import time
+np.random.seed(42)
+a = np.random.normal(size=10)
+
+
+def assert_array_notequal(x, y):
+    try:
+        np.testing.assert_array_almost_equal(x, y)
+        return False
+    except:
+        True
+
 
 @fwk.one_producer("data_token")
 def open_data():
@@ -14,29 +25,139 @@ def open_data():
     return True
 
 
-@fwk.one_producer("data")
+@fwk.one_producer("data_frame")
 @fwk.consumes(token="data_token")
-def read_data(token):
+def make_data_frame(token):
     """ Simulate some time consuming data producer that depends on some other product.
     """
-    time.sleep(1)
-    df = pd.DataFrame(np.random.randint(0,100,size=(100, 4)), columns=list('ABCD'))
+    df = pd.DataFrame(dict(x=a))
     return df
 
 
-producers = [open_data, read_data]
+@fwk.one_producer("data_array")
+@fwk.consumes(token="data_token")
+def make_array(token):
+    """ Simulate some time consuming data producer that depends on some other product.
+    """
+    return a[:]
+
+
+@fwk.one_producer("data_jagged")
+@fwk.consumes(token="data_token")
+def make_jagged(token):
+    """ Simulate some time consuming data producer that depends on some other product.
+    """
+    return awkward.JaggedArray([0], [10], a[:])
+
+
+@fwk.one_producer("data_scalar")
+@fwk.consumes(token="data_token")
+def make_scalar(token):
+    """ Simulate some time consuming data producer that depends on some other product.
+    """
+    return a[0]
 
 
 class Test(unittest.TestCase):
-    def test_framework_cache(self):
+    def test_framework_cache_dataframe(self):
 
-        record = fwk.produce(products=["/data"], producers=producers, max_workers=32, cache_time=0.1)
+        cache_dir = ".test_framework_cache"
 
-        # print(record)
-        # print("Length of final record:")
-        # print(len(record["WWZ/merged"]))
+        # Make sure there is no cache so far
+        try:
+            shutil.rmtree(cache_dir)
+        except FileNotFoundError:
+            pass
 
-        # self.assertTrue("WWZ/merged" in record.keys())
+        producers = [open_data, make_data_frame]
+
+        record = fwk.produce(
+            products=["/data_frame"], producers=producers, max_workers=32, cache_time=0.0, cache_dir=cache_dir
+        )
+        np.testing.assert_array_almost_equal(record["data_frame"]["x"].values, a)
+
+        a[:] = np.random.normal(size=10)
+        record = fwk.produce(
+            products=["/data_frame"], producers=producers, max_workers=32, cache_time=0.0, cache_dir=cache_dir
+        )
+        assert_array_notequal(record["data_frame"]["x"].values, a)
+
+        shutil.rmtree(cache_dir)
+
+    def test_framework_cache_array(self):
+
+        cache_dir = ".test_framework_cache"
+
+        # Make sure there is no cache so far
+        try:
+            shutil.rmtree(cache_dir)
+        except FileNotFoundError:
+            pass
+
+        producers = [open_data, make_array]
+
+        record = fwk.produce(
+            products=["/data_array"], producers=producers, max_workers=32, cache_time=0.0, cache_dir=cache_dir
+        )
+        np.testing.assert_array_almost_equal(record["data_array"], a)
+
+        a[:] = np.random.normal(size=10)
+        record = fwk.produce(
+            products=["/data_array"], producers=producers, max_workers=32, cache_time=0.0, cache_dir=cache_dir
+        )
+        assert_array_notequal(record["data_array"], a)
+
+        shutil.rmtree(cache_dir)
+
+    def test_framework_cache_jagged(self):
+
+        cache_dir = ".test_framework_cache"
+
+        # Make sure there is no cache so far
+        try:
+            shutil.rmtree(cache_dir)
+        except FileNotFoundError:
+            pass
+
+        producers = [open_data, make_jagged]
+
+        record = fwk.produce(
+            products=["/data_jagged"], producers=producers, max_workers=32, cache_time=0.0, cache_dir=cache_dir
+        )
+        np.testing.assert_array_almost_equal(record["data_jagged"].flatten(), a.flatten())
+
+        a[:] = np.random.normal(size=10)
+        record = fwk.produce(
+            products=["/data_jagged"], producers=producers, max_workers=32, cache_time=0.0, cache_dir=cache_dir
+        )
+        assert_array_notequal(record["data_jagged"].flatten(), a.flatten())
+
+        shutil.rmtree(cache_dir)
+
+    def test_framework_cache_scalar(self):
+
+        cache_dir = ".test_framework_cache"
+
+        # Make sure there is no cache so far
+        try:
+            shutil.rmtree(cache_dir)
+        except FileNotFoundError:
+            pass
+
+        producers = [open_data, make_scalar]
+
+        record = fwk.produce(
+            products=["/data_scalar"], producers=producers, max_workers=32, cache_time=0.0, cache_dir=cache_dir
+        )
+        self.assertTrue(record["data_scalar"] == a[0])
+
+        a[:] = np.random.normal(size=10)
+        record = fwk.produce(
+            products=["/data_scalar"], producers=producers, max_workers=32, cache_time=0.0, cache_dir=cache_dir
+        )
+        self.assertTrue(record["data_scalar"] != a[0])
+
+        shutil.rmtree(cache_dir)
 
 
 if __name__ == "__main__":

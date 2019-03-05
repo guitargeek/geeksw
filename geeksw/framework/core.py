@@ -82,7 +82,9 @@ def get_required_producers(product, producer_funcs, datasets, record, cache):
     return producers
 
 
-def produce(products=None, producers=[], datasets=None, max_workers=32, cache_time=2, verbosity=1, cache_dir=".geeksw_cache"):
+def produce(
+    products=None, producers=[], datasets=None, max_workers=32, cache_time=2, verbosity=1, cache_dir=".geeksw_cache"
+):
 
     target_products = products
 
@@ -132,7 +134,7 @@ def produce(products=None, producers=[], datasets=None, max_workers=32, cache_ti
             cache[pname] = record[pname]
             # size = cache(record[pname], pname)
             # if size > 0:
-                # print("Cached product {0}: {1}".format(pname, humanbytes(size)))
+            # print("Cached product {0}: {1}".format(pname, humanbytes(size)))
 
         for key in list(record.keys()):
             if key not in requirements_all and key not in target_products:
