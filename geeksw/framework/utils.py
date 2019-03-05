@@ -5,6 +5,8 @@ import sys
 def mkdir(path):
     if not os.path.exists(path):
         os.makedirs(path)
+        return True
+    return False
 
 
 def humanbytes(B):

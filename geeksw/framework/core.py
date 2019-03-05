@@ -1,30 +1,13 @@
 import os
-import pickle
-import inspect
 import time
 import numpy as np
 import re
 import awkward
 import h5py
-import glob
-
 from .utils import *
 from .dependencies import *
 from .ProducerWrapper import ProducerWrapper, expand_wildcard
-
-
-cache_dir = ".geeksw_cache"
-
-
-def get_from_cache(product):
-
-    filename = product.replace("/", "__")
-
-    cache_file_name = os.path.join(cache_dir, filename + ".pkl")
-    if os.path.isfile(cache_file_name):
-        return pickle.load(open(cache_file_name, "rb"))
-
-    raise ValueError("Product " + product + " not found in cache!")
+from .cache import FrameworkCache
 
 
 def load_producers(producers_path):
@@ -44,20 +27,6 @@ def load_producers(producers_path):
     del file_name
 
     return producers
-
-
-def cache(obj, name):
-
-    name = name.replace("/", "__")
-
-    try:
-        file_name = os.path.join(cache_dir, name + ".pkl")
-        with open(file_name, "wb") as f:
-            pickle.dump(obj, f)
-        return os.path.getsize(file_name)
-    except pickle.PicklingError as e:
-        print("Product " + name + " could not be pickled.")
-        return -1
 
 
 def match_product(product, func):
@@ -87,11 +56,10 @@ def match_product(product, func):
     return group, score
 
 
-def get_required_producers(product, producer_funcs, datasets, record):
+def get_required_producers(product, producer_funcs, datasets, record, cache):
 
-    cache_file_wo_suffix = os.path.join(cache_dir, product.replace("/", "__"))
-    if glob.glob(cache_file_wo_suffix + "*"):
-        record[product] = get_from_cache(product)
+    if product in cache:
+        record[product] = cache[product]
         return []
 
     groups, scores = zip(*[match_product(product, f) for f in producer_funcs])
@@ -109,17 +77,16 @@ def get_required_producers(product, producer_funcs, datasets, record):
     producers = [ProducerWrapper(func, subs, working_dir, datasets)]
 
     for req in producers[0].flattened_requirements:
-        producers += get_required_producers(req, producer_funcs, datasets, record)
+        producers += get_required_producers(req, producer_funcs, datasets, record, cache)
 
     return producers
 
 
-def produce(products=None, producers=[], datasets=None, max_workers=32, cache_time=2, verbosity=1):
+def produce(products=None, producers=[], datasets=None, max_workers=32, cache_time=2, verbosity=1, cache_dir=".geeksw_cache"):
 
     target_products = products
 
-    # Create the cache dir structure
-    mkdir(cache_dir)
+    cache = FrameworkCache(cache_dir=cache_dir)
 
     if isinstance(producers, str):
         producers = load_producers(producers)
@@ -132,7 +99,7 @@ def produce(products=None, producers=[], datasets=None, max_workers=32, cache_ti
     record = {}
 
     for t in target_products:
-        producer_instances += get_required_producers(t, producers, datasets, record)
+        producer_instances += get_required_producers(t, producers, datasets, record, cache)
 
     producers = list(set(producer_instances))
 
@@ -160,11 +127,12 @@ def produce(products=None, producers=[], datasets=None, max_workers=32, cache_ti
                 requirements_all += producer.flattened_requirements
 
         if time.time() - start_time > cache_time:
-            print("Pruducer time longer than 2 seconds, caching product...")
+            print("Pruducer time longer than {0:.2f} seconds, caching product...".format(cache_time))
             pname = producers[ip].product
-            size = cache(record[pname], pname)
-            if size > 0:
-                print("Cached product {0}: {1}".format(pname, humanbytes(size)))
+            cache[pname] = record[pname]
+            # size = cache(record[pname], pname)
+            # if size > 0:
+                # print("Cached product {0}: {1}".format(pname, humanbytes(size)))
 
         for key in list(record.keys()):
             if key not in requirements_all and key not in target_products:
