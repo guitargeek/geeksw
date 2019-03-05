@@ -15,6 +15,7 @@ addons:
   apt:
     packages:
       - python-setuptools
+      - libhdf5-serial-dev
 
 script:
   python setup.py pytest
