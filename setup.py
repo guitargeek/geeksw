@@ -15,5 +15,5 @@ setup(
     test_suite="tests",
     setup_requires=["pytest-runner"],
     tests_require=["pytest", "pandas"],
-    install_requires=["numpy", "matplotlib", "awkward", "h5py", "uproot", "futures", "uproot-methods", "torch"],
+    install_requires=["numpy", "matplotlib", "awkward", "h5py", "uproot", "futures", "uproot-methods", "torch", "tables"],
 )
