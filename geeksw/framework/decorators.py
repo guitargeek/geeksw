@@ -49,7 +49,7 @@ def one_producer(product_names, stream=False, cache=True):
     return one_wrapper
 
 
-def stream_producer(*product_names, cache=False):
+def stream_producer(*product_names, cache=True):
     if len(product_names) > 1:
         raise ValueError("Producers functions with more than one product not supported yet!")
     product_name = product_names[0]

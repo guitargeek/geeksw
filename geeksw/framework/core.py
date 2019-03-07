@@ -128,6 +128,7 @@ def produce(
             if i in exec_order:
                 requirements_all += producer.flattened_requirements
 
+        print(time.time() - start_time > cache_time)
         if producers[ip].cache and time.time() - start_time > cache_time:
             print("Pruducer time longer than {0:.2f} seconds, caching product...".format(cache_time))
             pname = producers[ip].product

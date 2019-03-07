@@ -109,7 +109,9 @@ class Test(unittest.TestCase):
         self, [open_data, make_data_frame], data_transf=lambda data: data["x"].values
     )
     test_framework_cache_array = lambda self: _test_cache(self, [open_data, make_array])
-    test_framework_cache_jagged = lambda self: _test_cache(self, [open_data, make_jagged], data_transf=lambda data: data.flatten())
+    test_framework_cache_jagged = lambda self: _test_cache(
+        self, [open_data, make_jagged], data_transf=lambda data: data.flatten()
+    )
     test_framework_cache_scalar = lambda self: _test_cache(self, [open_data, make_scalar], a_transf=lambda a: a[0])
     test_framework_cache_notimeout = lambda self: _test_cache(
         self, [open_data, make_scalar], a_transf=lambda a: a[0], test_disabeled=True, cache_time=1.0

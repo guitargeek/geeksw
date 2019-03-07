@@ -26,8 +26,6 @@ class ProducerWrapper(object):
         product = replace_from_dict(func.product, subs)
         requirements = {k: replace_from_dict(v, subs) for k, v in func.requirements.items()}
 
-        self.description = " ".join(list(requirements.values()) + ["->", product])
-
         self.datasets = datasets
         self.subs = subs
         self.product = working_dir + product
@@ -37,6 +35,10 @@ class ProducerWrapper(object):
 
         self.cache = func.do_cache
         self.func = func
+
+        self.description = " ".join(
+            list(requirements.values()) + ["->", product] + ["(cache disabeled)" * int(not self.cache)]
+        )
 
     def run(self, record):
         inputs = {}

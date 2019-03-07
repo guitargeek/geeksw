@@ -8,23 +8,33 @@ import awkward
 from .utils import mkdir
 from .stream import StreamList
 
+vetoed_classnames = ["UprootIOWrapper", "JaggedArrayMethods"]
+
+
 def _save_to_cache(filename, item):
 
     classname = type(item).__name__
 
+    if classname in vetoed_classnames:
+        return
+
     if classname == "StreamList":
+        if type(item[0]).__name__ in vetoed_classnames:
+            return
         mkdir(filename)
         for i, subitem in enumerate(item):
             subclassname = type(subitem).__name__
             if subclassname == "StreamList":
                 raise TypeError("StreamList in a StreamList found, which should not happen.")
-            subfilename = os.path.join(filename, os.path.basename(filename.replace(classname, subclassname)) + "__"+str(i))
+            subfilename = os.path.join(
+                filename, os.path.basename(filename.replace(classname, subclassname)) + "__" + str(i)
+            )
             _save_to_cache(subfilename, subitem)
         return
 
     if classname == "DataFrame":
         item.to_hdf(filename + ".h5", key="data")
-        return 
+        return
 
     if classname in ["ndarray", "JaggedArray"]:
         with h5py.File(filename + ".h5", "w") as hf:
@@ -35,6 +45,7 @@ def _save_to_cache(filename, item):
     with open(filename + ".pkl", "wb") as f:
         pickle.dump(item, f)
     return
+
 
 def _get_from_cache(filename):
 
@@ -58,6 +69,7 @@ def _get_from_cache(filename):
         with open(filename + ".pkl", "rb") as pf:
             product = pickle.load(pf)
         return product
+
 
 class FrameworkCache(object):
     def __init__(self, cache_dir):
