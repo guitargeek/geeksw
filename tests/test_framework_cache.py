@@ -36,6 +36,15 @@ def make_data_frame(token):
     return df
 
 
+@fwk.one_producer("data", stream=True)
+@fwk.consumes(token="data_token")
+def make_data_frame_stream(token):
+    """ Simulate some time consuming data producer that depends on some other product.
+    """
+    df = pd.DataFrame(dict(x=a))
+    return [df, df, df]
+
+
 @fwk.one_producer("data")
 @fwk.consumes(token="data_token")
 def make_array(token):
@@ -68,15 +77,13 @@ def make_scalar_nocache(token):
     return a[0]
 
 
-def _test_cache(self, producer, test_disabeled=False, data_transf=lambda a: a, a_transf=lambda a: a, cache_time=None):
+def _test_cache(self, producers, test_disabeled=False, data_transf=lambda a: a, a_transf=lambda a: a, cache_time=None):
 
     # Make sure there is no cache so far
     try:
         shutil.rmtree(cache_dir)
     except FileNotFoundError:
         pass
-
-    producers = [open_data, producer]
 
     if cache_time is None:
         cache_time = 0.0
@@ -99,17 +106,20 @@ def _test_cache(self, producer, test_disabeled=False, data_transf=lambda a: a, a
 class Test(unittest.TestCase):
 
     test_framework_cache_dataframe = lambda self: _test_cache(
-        self, make_data_frame, data_transf=lambda data: data["x"].values
+        self, [open_data, make_data_frame], data_transf=lambda data: data["x"].values
     )
-    test_framework_cache_array = lambda self: _test_cache(self, make_array)
-    test_framework_cache_jagged = lambda self: _test_cache(self, make_jagged, data_transf=lambda data: data.flatten())
-    test_framework_cache_scalar = lambda self: _test_cache(self, make_scalar, a_transf=lambda a: a[0])
-
+    test_framework_cache_array = lambda self: _test_cache(self, [open_data, make_array])
+    test_framework_cache_jagged = lambda self: _test_cache(self, [open_data, make_jagged], data_transf=lambda data: data.flatten())
+    test_framework_cache_scalar = lambda self: _test_cache(self, [open_data, make_scalar], a_transf=lambda a: a[0])
     test_framework_cache_notimeout = lambda self: _test_cache(
-        self, make_scalar, a_transf=lambda a: a[0], test_disabeled=True, cache_time=1.0
+        self, [open_data, make_scalar], a_transf=lambda a: a[0], test_disabeled=True, cache_time=1.0
     )
     test_framework_cache_disabeled = lambda self: _test_cache(
-        self, make_scalar_nocache, a_transf=lambda a: a[0], test_disabeled=True
+        self, [open_data, make_scalar_nocache], a_transf=lambda a: a[0], test_disabeled=True
+    )
+
+    test_framework_cache_dataframe_stream = lambda self: _test_cache(
+        self, [open_data, make_data_frame_stream], data_transf=lambda data: data[0]["x"].values
     )
 
 
