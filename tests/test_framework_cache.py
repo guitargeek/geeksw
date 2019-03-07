@@ -58,6 +58,14 @@ def make_scalar(token):
     return a[0]
 
 
+@fwk.one_producer("data_scalar_nocache", cache=False)
+@fwk.consumes(token="data_token")
+def make_scalar_nocache(token):
+    """ Simulate some time consuming data producer that depends on some other product.
+    """
+    return a[0]
+
+
 class Test(unittest.TestCase):
     def test_framework_cache_dataframe(self):
 
@@ -156,6 +164,46 @@ class Test(unittest.TestCase):
             products=["/data_scalar"], producers=producers, max_workers=32, cache_time=0.0, cache_dir=cache_dir
         )
         self.assertTrue(record["data_scalar"] != a[0])
+
+        shutil.rmtree(cache_dir)
+
+    def test_framework_cache_disabeled(self):
+
+        cache_dir = ".test_framework_cache"
+
+        # Make sure there is no cache so far
+        try:
+            shutil.rmtree(cache_dir)
+        except FileNotFoundError:
+            pass
+
+        # Disable cache by timeout
+        producers = [open_data, make_scalar]
+
+        record = fwk.produce(
+            products=["/data_scalar"], producers=producers, max_workers=32, cache_time=1.0, cache_dir=cache_dir
+        )
+        self.assertTrue(record["data_scalar"] == a[0])
+
+        a[:] = np.random.normal(size=10)
+        record = fwk.produce(
+            products=["/data_scalar"], producers=producers, max_workers=32, cache_time=1.0, cache_dir=cache_dir
+        )
+        self.assertTrue(record["data_scalar"] == a[0])
+
+        # Disable cache explicitly in producer
+        producers = [open_data, make_scalar_nocache]
+
+        record = fwk.produce(
+            products=["/data_scalar_nocache"], producers=producers, max_workers=32, cache_time=0.0, cache_dir=cache_dir
+        )
+        self.assertTrue(record["data_scalar_nocache"] == a[0])
+
+        a[:] = np.random.normal(size=10)
+        record = fwk.produce(
+            products=["/data_scalar_nocache"], producers=producers, max_workers=32, cache_time=0.0, cache_dir=cache_dir
+        )
+        self.assertTrue(record["data_scalar_nocache"] == a[0])
 
         shutil.rmtree(cache_dir)
 

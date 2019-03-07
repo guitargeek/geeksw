@@ -128,13 +128,10 @@ def produce(
             if i in exec_order:
                 requirements_all += producer.flattened_requirements
 
-        if time.time() - start_time > cache_time:
+        if producers[ip].cache and time.time() - start_time > cache_time:
             print("Pruducer time longer than {0:.2f} seconds, caching product...".format(cache_time))
             pname = producers[ip].product
             cache[pname] = record[pname]
-            # size = cache(record[pname], pname)
-            # if size > 0:
-            # print("Cached product {0}: {1}".format(pname, humanbytes(size)))
 
         for key in list(record.keys()):
             if key not in requirements_all and key not in target_products:

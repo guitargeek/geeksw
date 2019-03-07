@@ -18,7 +18,7 @@ def consumes(**requirements):
     return wrapper
 
 
-def one_producer(product_names, stream=False):
+def one_producer(product_names, stream=False, cache=True):
     if isinstance(product_names, list) and len(product_names) > 1:
         raise ValueError("Producers functions with more than one product not supported yet!")
     product_name = product_names
@@ -41,6 +41,7 @@ def one_producer(product_names, stream=False):
         producer_func.product = product_name
         is_template = "<" in product_name or ">" in product_name
         producer_func.is_template = is_template
+        producer_func.do_cache = cache
         if not hasattr(producer_func, "requirements"):
             producer_func.requirements = {}
         return producer_func
@@ -48,7 +49,7 @@ def one_producer(product_names, stream=False):
     return one_wrapper
 
 
-def stream_producer(*product_names):
+def stream_producer(*product_names, cache=False):
     if len(product_names) > 1:
         raise ValueError("Producers functions with more than one product not supported yet!")
     product_name = product_names[0]
@@ -81,6 +82,7 @@ def stream_producer(*product_names):
         producer_func.product = product_name
         is_template = "<" in product_name or ">" in product_name
         producer_func.is_template = is_template
+        producer_func.do_cache = cache
         if not hasattr(producer_func, "requirements"):
             producer_func.requirements = {}
         return producer_func

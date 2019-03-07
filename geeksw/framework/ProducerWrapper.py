@@ -35,6 +35,7 @@ class ProducerWrapper(object):
         self.requirements = {k: expand_wildcard(working_dir + v, datasets) for k, v in requirements.items()}
         self.flattened_requirements = [y for x in self.requirements.values() for y in x]
 
+        self.cache = func.do_cache
         self.func = func
 
     def run(self, record):
