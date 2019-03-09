@@ -6,6 +6,13 @@ import pandas as pd
 import numpy as np
 import shutil
 
+
+# Define something that acts as FileNotFoundError in Python2
+try:
+    FileNotFoundError
+except NameError:
+    FileNotFoundError = IOError
+
 np.random.seed(42)
 a = np.random.normal(size=10)
 
