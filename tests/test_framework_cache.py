@@ -7,12 +7,6 @@ import numpy as np
 import shutil
 
 
-# Define something that acts as FileNotFoundError in Python2
-try:
-    FileNotFoundError
-except NameError:
-    FileNotFoundError = IOError
-
 np.random.seed(42)
 a = np.random.normal(size=10)
 
@@ -89,7 +83,7 @@ def _test_cache(self, producers, test_disabeled=False, data_transf=lambda a: a, 
     # Make sure there is no cache so far
     try:
         shutil.rmtree(cache_dir)
-    except FileNotFoundError:
+    except:
         pass
 
     if cache_time is None:
