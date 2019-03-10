@@ -1,0 +1,8 @@
+,Configuration,First Run,Last Run,Comment
+0,22a,179,218,"HGC only, TOA thr = 270"
+1,22b,258,722,TOA thr = 230 from now on
+2,23a,751,797,Problem with missing module in DAQ
+3,23b,803,850,-
+4,23c,907,1064,"MCP integrated, shift of skiroc2-cms pulses to lower values from run 907 onward"
+5,24a,1079,1168,-
+6,24b,1182,1270,Parasitic data taking
