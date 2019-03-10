@@ -8,12 +8,18 @@ import uproot
 import awkward
 
 
-# data_path = "/home/llr/ilc/appro2/data/ntuples/v11"
-data_path = "/data_CMS/cms/rembser/store/group/dpg_hgcal/tb_hgcal/2018/cern_h2_october/offline_analysis/ntuples/v11"
+ntuple_dir = os.environ["HGCAL_TESTBEAM_NTUPLE_DIR"]
 
 
 def load_run(
-    run, columns=None, key="rechitntupler/hits", entrystart=None, entrystop=None, data_path=data_path, mask_noisy=True, verbosity=0
+    run,
+    columns=None,
+    key="rechitntupler/hits",
+    entrystart=None,
+    entrystop=None,
+    ntuple_dir=ntuple_dir,
+    mask_noisy=True,
+    verbosity=0,
 ):
 
     if verbosity > 0:
@@ -33,7 +39,7 @@ def load_run(
                 columns.append("rechit_layer")
 
     # Load the ntuple
-    file_path = os.path.join(data_path, "ntuple_{0}.root".format(run))
+    file_path = os.path.join(ntuple_dir, "ntuple_{0}.root".format(run))
     branches_from_tree = None
     if not columns is None:
         branches_from_tree = [c for c in columns if not c in colnames_from_sampling]
@@ -89,7 +95,7 @@ def iterate_runs(runlist, query=None, **kwargs):
         yield runlist.iloc[idx], load_run(runlist.iloc[idx]["Run"], **kwargs)
 
 
-def load_runlist(data_path=data_path):
+def load_runlist(ntuple_dir=ntuple_dir):
     # download the runlist
     file_path = os.path.join(os.path.dirname(__file__), "data/cern_Oct2018_runlist_clean_v1.csv")
     runlist = pd.read_csv(file_path)
@@ -107,7 +113,7 @@ def load_runlist(data_path=data_path):
     runlist.at[duplicate_run_idx, "Run"] = 1116
 
     # we only care about the runs which are actually available as HDF tables
-    files = glob.glob(os.path.join(data_path, "ntuple_*.root"))
+    files = glob.glob(os.path.join(ntuple_dir, "ntuple_*.root"))
     available_runs = [int(f[:-5].split("_")[-1]) for f in files]
 
     runlist = runlist[np.in1d(runlist.Run, available_runs)]
@@ -209,17 +215,18 @@ def get_df_layers(df, configuration, max_layer=28):
     nevents = len(events)
 
     repeated_events = np.repeat(events, max_layer)
-    repeated_layers = np.tile(np.arange(1, max_layer+1), nevents)
+    repeated_layers = np.tile(np.arange(1, max_layer + 1), nevents)
 
     sampling_factors_layer_idx = sampling_factors[configuration].set_index("Layer")
     x0_values = sampling_factors_layer_idx.loc[repeated_layers, "X0"].values
-    empty_df = pd.DataFrame(data={"rechit_X0": x0_values},
-                            index=pd.MultiIndex.from_arrays([repeated_events, repeated_layers],
-                                                            names=("event", "rechit_layer")))
+    empty_df = pd.DataFrame(
+        data={"rechit_X0": x0_values},
+        index=pd.MultiIndex.from_arrays([repeated_events, repeated_layers], names=("event", "rechit_layer")),
+    )
 
     df_layers = pd.concat([empty_df, df_layers], axis=1)
     df_layers = df_layers.fillna(0.0)
 
-    assert(len(df_layers) == max_layer * nevents)
+    assert len(df_layers) == max_layer * nevents
 
     return df_layers

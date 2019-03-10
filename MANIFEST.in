@@ -1,1 +1,9 @@
+include geeksw/hgcal/data/cern_Oct2018_runlist_clean_v1.csv
+include geeksw/hgcal/data/samplingfactors1.csv
+include geeksw/hgcal/data/samplingfactors2.csv
+include geeksw/hgcal/data/samplingfactors3.csv
+include geeksw/hgcal/data/run_ranges.csv
+include geeksw/hgcal/data/materials1.csv
+include geeksw/hgcal/data/materials2.csv
+include geeksw/hgcal/data/materials3.csv
 include README.md
