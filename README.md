@@ -37,6 +37,10 @@ pip install --user .
 
 A few tools are provided to make the most out of [scipy.optimize.curve_fit](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.curve_fit.html). It is possible to automatically obtain the Jacobian to any fitting function with using pytorch, which is wrapped by the [wrap_jac](https://github.com/guitargeek/geeksw/blob/master/geeksw/fitting/utils.py#L5) function. An example of this can be found in a [jupyter notebook](https://github.com/guitargeek/geeksw/blob/master/examples/fitting_with_jacobian.ipynb).
 
+### HGCal
+
+The HGCal package includes tools to load and regroup HGCal beam test ntuples. The environment variable `HGCAL_TESTBEAM_NTUPLE_DIR` needs to be set to the path of the testbeam data ntuples you want to analyze. An array of examples can be found in [examples/hgcal](https://github.com/guitargeek/geeksw/tree/master/examples/hgcal).
+
 ## Developer guide
 
 Plese format the edited python sources with [black](https://github.com/ambv/black) before making any pull request, setting the `--line-length 120` argument.
