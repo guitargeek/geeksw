@@ -96,6 +96,9 @@ def _test_cache(self, producers, test_disabeled=False, data_transf=lambda a: a, 
 
     a[:] = np.random.normal(size=n) + 1.0
     record = fwk.produce(products=["/data"], producers=producers, max_workers=32, cache_time=0.0, cache_dir=cache_dir)
+
+    shutil.rmtree(cache_dir)
+
     if test_disabeled:
         np.testing.assert_array_almost_equal(data_transf(record["data"]), a_transf(a))
     else:
@@ -103,8 +106,6 @@ def _test_cache(self, producers, test_disabeled=False, data_transf=lambda a: a, 
             self.assertNotEqual(data_transf(record["data"]), a_transf(a))
         else:
             assert_array_notequal(data_transf(record["data"]), a_transf(a))
-
-    shutil.rmtree(cache_dir)
 
 
 class Test(unittest.TestCase):

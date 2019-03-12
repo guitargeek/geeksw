@@ -4,11 +4,13 @@ import pickle
 import pandas as pd
 import h5py
 import awkward
+from collections import OrderedDict
+import uproot_methods
 
 from .utils import mkdir
 from .stream import StreamList
 
-vetoed_classnames = ["UprootIOWrapper", "JaggedArrayMethods"]
+vetoed_classnames = ["UprootIOWrapper", "TTree"]
 
 
 def _save_to_cache(filename, item):
@@ -42,6 +44,20 @@ def _save_to_cache(filename, item):
             ah5["data"] = item
         return
 
+    # For TLorentsVectorArray from ptetaphimass
+    if (
+        classname == "JaggedArrayMethods"
+        and type(item._content).__name__ == "PtEtaPhiMassLorentzVectorArray"
+        and type(item._content._content).__name__ == "Table"
+    ):
+        contents = item._content._content._contents
+        filename = filename.replace("JaggedArrayMethods", "JaggedArrayMethods_PtEtaPhiMassLorentzVectorArray_Table")
+        with h5py.File(filename + ".h5", "w") as hf:
+            ah5 = awkward.hdf5(hf)
+            for k, v in contents.items():
+                ah5[k] = v
+        return
+
     with open(filename + ".pkl", "wb") as f:
         pickle.dump(item, f)
     return
@@ -58,6 +74,21 @@ def _get_from_cache(filename):
 
     if "__DataFrame" in basename:
         return pd.read_hdf(filename, key="data")
+
+    # For TLorentsVectorArray from ptetaphimass
+    if "JaggedArrayMethods_PtEtaPhiMassLorentzVectorArray_Table" in basename:
+        content = OrderedDict()
+        with h5py.File(filename) as hf:
+            ah5 = awkward.hdf5(hf)
+            for k in ah5:
+                content[k] = ah5[k]
+        particles = uproot_methods.TLorentzVectorArray.from_ptetaphim(
+            content["fPt"], content["fEta"], content["fPhi"], content["fMass"]
+        )
+        for k in content:
+            if k not in ["fPt", "fEta", "fPhi", "fMass"]:
+                particles[k] = content[k]
+        return particles
 
     if "__ndarray" in basename or "__JaggedArray" in basename:
         with h5py.File(filename) as hf:
@@ -86,11 +117,10 @@ class FrameworkCache(object):
 
         filename = os.path.join(self.cache_dir, key + "__" + type(item).__name__)
 
-        _save_to_cache(filename, item)
-        # try:
-        # _save_to_cache(filename, item)
-        # except:
-        # print("Product " + name + " could not be cached.")
+        try:
+            _save_to_cache(filename, item)
+        except:
+            print("Product " + name + " could not be cached.")
 
     def __getitem__(self, key):
 
