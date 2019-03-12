@@ -5,18 +5,18 @@ class Cutflow(object):
     @staticmethod
     def frommasks(masks, labels):
         cutflow = Cutflow()
-        masktotal = np.ones_like(masks[0], dtype=np.bool)
+        _mask = np.ones_like(masks[0], dtype=np.bool)
         cutflow._labels = labels
         cutflow._nbegin = len(masks[0])
         efficiencies = []
         for mask in masks:
-            masktotal = np.logical_and(masktotal, mask)
-            efficiencies.append(float(np.sum(masktotal))/cutflow._nbegin)
+            _mask = np.logical_and(_mask, mask)
+            efficiencies.append(float(np.sum(_mask))/cutflow._nbegin)
 
         cutflow._efficiencies = np.array(efficiencies)
-        cutflow._nend = np.sum(masktotal)
+        cutflow._nend = np.sum(_mask)
 
-        cutflow.masktotal = masktotal
+        cutflow._mask = _mask
 
         return cutflow
 
@@ -28,10 +28,23 @@ class Cutflow(object):
     def efficiencies(self):
         return self._efficiencies
 
+    @property
+    def mask(self):
+        return self._mask
+
     def __call__(self, array):
-        return array[self.masktotal]
+        return array[self._mask]
 
     def __repr__(self):
+        s = "<Cutflow"
+        for label, eff in zip(self._labels, self._efficiencies):
+            if s[-1] != "w":
+                s += ","
+            s += " (" + label + ", {0:.1f} %)".format(100 * eff)
+        s += ">"
+        return s
+
+    def prettyprint(self):
         s = "Cutflow:"
         i = 0
         for label, eff in zip(self._labels, self._efficiencies):
@@ -50,8 +63,8 @@ class Cutflow(object):
         cutflow._nbegin = self._nbegin
         cutflow._nend = other._nend
 
-        cutflow.masktotal = self.masktotal.copy()
-        cutflow.masktotal[cutflow.masktotal] = other.masktotal
+        cutflow._mask = self._mask.copy()
+        cutflow._mask[cutflow._mask] = other._mask
 
         return cutflow
 
@@ -65,21 +78,14 @@ class Cutflow(object):
         ax = plt.gca()
         xlim = plt.xlim(0., 1.)
         d = xlim[1] - xlim[0]
-        for i, v in enumerate(series.values):
-            ax.text(
-                v - d * 0.02,
-                i - 0.05,
-                "{0:.1f} %".format(100*v),
-                horizontalalignment="right",
-                # fontweight="bold",
-            )
-        for i, v in enumerate(series.index):
+        i = 0
+        for lbl, val in zip(series.index, series.values):
             ax.text(
                 0.02,
                 i - 0.05,
-                v
-                # fontweight="bold",
+                lbl + "  " + "{0:.2f} %".format(100*val)
             )
+            i = i + 1
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
         plt.grid(False)

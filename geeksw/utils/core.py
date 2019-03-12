@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from geeksw.data_formats import Cutflow
 
 
 def concatenate(arrays):
@@ -11,5 +12,7 @@ def concatenate(arrays):
         df = pd.concat(arrays)
         df.index = np.arange(len(df))
         return df
+    elif isinstance(arrays[0], Cutflow):
+        return Cutflow.average(arrays)
     else:
         return arrays[0].concatenate(arrays[1:])
