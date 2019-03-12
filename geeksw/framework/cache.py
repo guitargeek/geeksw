@@ -69,7 +69,8 @@ def _get_from_cache(filename):
 
     if "__StreamList" in basename:
         filenames = glob.glob(filename + "/*")
-        stream_list = StreamList([_get_from_cache(f) for f in filenames])
+        print(filenames)
+        stream_list = StreamList([_get_from_cache(f) for f in sorted(filenames)])
         return stream_list
 
     if "__DataFrame" in basename:

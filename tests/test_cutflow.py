@@ -33,7 +33,7 @@ class Test(unittest.TestCase):
 
         cutflow = Cutflow.average([cutflow0, cutflow1])
 
-        self.assertAlmostEquals(cutflow.efficiencies[-1], final_efficiency)
+        self.assertAlmostEqual(cutflow.efficiencies[-1], final_efficiency)
 
     def test_cutflow_pickle(self):
 
