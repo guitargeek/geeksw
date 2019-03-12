@@ -25,6 +25,10 @@ class Cutflow(object):
         return self._labels
 
     @property
+    def efficiency(self):
+        return self._efficiencies[-1]
+
+    @property
     def efficiencies(self):
         return self._efficiencies
 
@@ -67,6 +71,13 @@ class Cutflow(object):
         cutflow._mask[cutflow._mask] = other._mask
 
         return cutflow
+
+    @property
+    def series(self):
+
+        import pandas as pd
+
+        return pd.Series(data=self._efficiencies, index=self._labels)[::-1]
 
     def plot(self):
 

@@ -124,11 +124,9 @@ def produce(
         record[producers[ip].product] = producers[ip].run(record)
 
         requirements_all = []
-        for i, producer in enumerate(producers):
-            if i in exec_order:
-                requirements_all += producer.flattened_requirements
+        for ipremain in exec_order[i+1:]:
+            requirements_all += producers[ipremain].flattened_requirements
 
-        print(time.time() - start_time > cache_time)
         if producers[ip].cache and time.time() - start_time > cache_time:
             print("Pruducer time longer than {0:.2f} seconds, caching product...".format(cache_time))
             pname = producers[ip].product
