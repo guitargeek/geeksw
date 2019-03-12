@@ -2,6 +2,14 @@ import numpy as np
 import awkward
 
 
+def ascontiguousarray(array):
+    counts = array.counts
+    offsets = array.counts2offsets(counts)
+    starts = offsets[:-1]
+    stops = offsets[1:]
+    return awkward.JaggedArray(starts, stops, array.flatten())
+
+
 def selection2mask(selection, array):
     """Convert at jagged array of index type into a jagged array of boolean
     types to mask an other array.

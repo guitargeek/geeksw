@@ -18,7 +18,7 @@ def load_tree():
 
 @fwk.stream_producer("electrons")
 @fwk.consumes(trees="trees")
-def load_branch(trees):
+def load_electrons(trees):
 
     pt = trees.array("Electron_pt")
     eta = trees.array("Electron_eta")
@@ -31,13 +31,21 @@ def load_branch(trees):
     return electrons
 
 
+@fwk.stream_producer("selected_electrons")
+@fwk.consumes(electrons="electrons")
+def load_selected_electrons(electrons):
+    mask = electrons.counts >= 3
+    return electrons[mask]
+
+
+producers = [load_electrons, load_tree, load_selected_electrons]
+
+
 class Test(unittest.TestCase):
     def test_framework_lorentzvectorarray(self):
 
         datasets = ["/WWZ"]
         products = ["/WWZ/electrons"]
-
-        producers = [load_branch, load_tree]
 
         record = fwk.produce(
             products=products,
@@ -47,8 +55,6 @@ class Test(unittest.TestCase):
             cache_time=0.0,
             cache_dir=cache_dir,
         )
-
-        producers = [load_branch]
 
         record_cached = fwk.produce(
             products=products,
@@ -66,6 +72,39 @@ class Test(unittest.TestCase):
         )
         np.testing.assert_array_almost_equal(
             record["WWZ/electrons"][0]["charge"].flatten(), record_cached["WWZ/electrons"][0]["charge"].flatten()
+        )
+
+    def test_framework_lorentzvectorarray_masked(self):
+
+        datasets = ["/WWZ"]
+        products = ["/WWZ/selected_electrons"]
+
+        record = fwk.produce(
+            products=products,
+            producers=producers,
+            datasets=datasets,
+            max_workers=32,
+            cache_time=0.0,
+            cache_dir=cache_dir,
+        )
+
+        record_cached = fwk.produce(
+            products=products,
+            producers=producers,
+            datasets=datasets,
+            max_workers=32,
+            cache_time=0.0,
+            cache_dir=cache_dir,
+        )
+
+        shutil.rmtree(cache_dir)
+
+        np.testing.assert_array_almost_equal(
+            record["WWZ/selected_electrons"][0].pt.flatten(), record_cached["WWZ/selected_electrons"][0].pt.flatten()
+        )
+        np.testing.assert_array_almost_equal(
+            record["WWZ/selected_electrons"][0]["charge"].flatten(),
+            record_cached["WWZ/selected_electrons"][0]["charge"].flatten(),
         )
 
 

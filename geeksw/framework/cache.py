@@ -9,6 +9,7 @@ import uproot_methods
 
 from .utils import mkdir
 from .stream import StreamList
+from geeksw.utils import awkward_utils
 
 vetoed_classnames = ["UprootIOWrapper", "TTree"]
 
@@ -29,7 +30,7 @@ def _save_to_cache(filename, item):
             if subclassname == "StreamList":
                 raise TypeError("StreamList in a StreamList found, which should not happen.")
             subfilename = os.path.join(
-                    filename, os.path.basename(filename.replace(classname, subclassname)) + "__{0:04d}".format(i)
+                filename, os.path.basename(filename.replace(classname, subclassname)) + "__{0:04d}".format(i)
             )
             _save_to_cache(subfilename, subitem)
         return
@@ -41,7 +42,10 @@ def _save_to_cache(filename, item):
     if classname in ["ndarray", "JaggedArray"]:
         with h5py.File(filename + ".h5", "w") as hf:
             ah5 = awkward.hdf5(hf)
-            ah5["data"] = item
+            if classname == "JaggedArray":
+                ah5["data"] = awkward_utils.ascontiguousarray(item)
+            else:
+                ah5["data"] = item
         return
 
     # For TLorentsVectorArray from ptetaphimass
@@ -50,12 +54,15 @@ def _save_to_cache(filename, item):
         and type(item._content).__name__ == "PtEtaPhiMassLorentzVectorArray"
         and type(item._content._content).__name__ == "Table"
     ):
+        starts = item._starts
+        stops = item._stops
         contents = item._content._content._contents
         filename = filename.replace("JaggedArrayMethods", "JaggedArrayMethods_PtEtaPhiMassLorentzVectorArray_Table")
         with h5py.File(filename + ".h5", "w") as hf:
             ah5 = awkward.hdf5(hf)
             for k, v in contents.items():
-                ah5[k] = v
+                a = awkward.JaggedArray(starts, stops, v)
+                ah5[k] = awkward_utils.ascontiguousarray(a)
         return
 
     with open(filename + ".pkl", "wb") as f:
