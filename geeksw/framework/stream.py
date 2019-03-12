@@ -11,6 +11,9 @@ class StreamList(list):
         else:
             super(StreamList, self).__init__([product])
 
+        if len(self) > 10000:
+            raise ValueError("StreamList can't be longer than 10000 because the filenames for caching are not adequate")
+
         self._cached_aggregate = None
 
     def aggregate(self):

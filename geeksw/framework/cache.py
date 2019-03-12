@@ -29,7 +29,7 @@ def _save_to_cache(filename, item):
             if subclassname == "StreamList":
                 raise TypeError("StreamList in a StreamList found, which should not happen.")
             subfilename = os.path.join(
-                filename, os.path.basename(filename.replace(classname, subclassname)) + "__" + str(i)
+                    filename, os.path.basename(filename.replace(classname, subclassname)) + "__{0:04d}".format(i)
             )
             _save_to_cache(subfilename, subitem)
         return
@@ -69,7 +69,6 @@ def _get_from_cache(filename):
 
     if "__StreamList" in basename:
         filenames = glob.glob(filename + "/*")
-        print(filenames)
         stream_list = StreamList([_get_from_cache(f) for f in sorted(filenames)])
         return stream_list
 
