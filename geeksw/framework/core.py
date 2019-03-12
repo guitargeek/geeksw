@@ -124,7 +124,7 @@ def produce(
         record[producers[ip].product] = producers[ip].run(record)
 
         requirements_all = []
-        for ipremain in exec_order[i+1:]:
+        for ipremain in exec_order[i + 1 :]:
             requirements_all += producers[ipremain].flattened_requirements
 
         if producers[ip].cache and time.time() - start_time > cache_time:

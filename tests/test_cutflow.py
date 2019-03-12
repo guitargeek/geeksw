@@ -35,6 +35,25 @@ class Test(unittest.TestCase):
 
         self.assertAlmostEquals(cutflow.efficiencies[-1], final_efficiency)
 
+    def test_cutflow_pickle(self):
+
+        import pickle
+        import os
+
+        np.random.seed(41)
+
+        a = np.random.uniform(size=1000)
+
+        cutflow = Cutflow.frommasks([a > -0.1, a > 0.1], ["cut0", "cut1"])
+
+        with open("test_cutflow.pkl", "wb") as f:
+            pickle.dump(cutflow, f)
+
+        with open("test_cutflow.pkl", "rb") as pf:
+            cutflow = pickle.load(pf)
+
+        os.remove("test_cutflow.pkl")
+
 
 if __name__ == "__main__":
 

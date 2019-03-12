@@ -8,7 +8,7 @@ import awkward
 from .utils import mkdir
 from .stream import StreamList
 
-vetoed_classnames = ["UprootIOWrapper", "JaggedArrayMethods", "Cutflow"]
+vetoed_classnames = ["UprootIOWrapper", "JaggedArrayMethods"]
 
 
 def _save_to_cache(filename, item):
@@ -65,8 +65,8 @@ def _get_from_cache(filename):
             array = ah5["data"]
         return array
 
-    if os.path.isfile(filename + ".pkl"):
-        with open(filename + ".pkl", "rb") as pf:
+    if filename.endswith(".pkl"):
+        with open(filename, "rb") as pf:
             product = pickle.load(pf)
         return product
 
@@ -86,10 +86,11 @@ class FrameworkCache(object):
 
         filename = os.path.join(self.cache_dir, key + "__" + type(item).__name__)
 
-        try:
-            _save_to_cache(filename, item)
-        except:
-            print("Product " + name + " could not be cached.")
+        _save_to_cache(filename, item)
+        # try:
+        # _save_to_cache(filename, item)
+        # except:
+        # print("Product " + name + " could not be cached.")
 
     def __getitem__(self, key):
 
