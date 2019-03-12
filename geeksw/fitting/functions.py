@@ -1,12 +1,16 @@
 import numpy as np
-from scipy.special import erf
+from scipy.special import erf, erfc, gamma
 
 
 def gaus(x, A, mu, sigma):
+    """A scaled normal distribution.
+    """
     return A * np.exp(-0.5 * ((x - mu) / sigma) ** 2)
 
 
 def crystalball(x, a, n, xb, sig):
+    """A scaled crystal ball distribution, i.e. a Gaussian with a power law for the left tail.
+    """
     x = x + 0j
     if a < 0:
         a = -a
@@ -30,6 +34,8 @@ def crystalball(x, a, n, xb, sig):
 
 
 def gausexp(x, N, mu, sigma, k):
+    """A scaled probability density function for a Gaussian with an exponential tail on the left.
+    """
     if k < 0:
         k = -k
 
@@ -38,3 +44,54 @@ def gausexp(x, N, mu, sigma, k):
     total += ((x - mu) / sigma <= -k) * N * np.exp(k ** 2 / 2.0 + k * ((x - mu) / sigma))
 
     return total
+
+
+def cbexgaus(m, m0, sigma, alpha, n, sigma2, left_tail):
+    """Convolution fix + exponential tail on the left.
+
+    It is not clear yet what this actually is. This distribution was obtained from https://github.com/fcouderc/egm_tnp_analysis/blob/master/libCpp/RooCBExGaussShape.h and is used to model signal distributions in EGM tag and probe studies.
+    """
+    t = (m - m0) / sigma
+    t0 = (m - m0) / sigma2
+    abs_alpha = abs(alpha)
+    abs_n = abs(n)
+
+    if left_tail >= 0:
+        return (
+            (t > 0) * np.exp(-0.5 * t0 * t0)
+            + np.logical_and(t > -abs_alpha, t <= 0) * np.exp(-0.5 * t * t)
+            + (t <= -abs_alpha) * np.exp(-0.5 * abs_alpha ** 2) * np.exp(n * (t + abs_alpha))
+        )
+    else:
+        return (
+            (t < 0) * np.exp(-0.5 * t * t)
+            + np.logical_and(t < abs_alpha, t >= 0) * np.exp(-0.5 * t0 * t0)
+            + (t >= abs_alpha)
+            * (abs_n / abs_alpha) ** abs_n
+            * np.exp(-0.5 * abs_alpha ** 2)
+            / (abs_n / abs_alpha - abs_alpha + t0) ** absN
+        )
+
+
+def cmsshape(x, alpha, beta, gamma, peak):
+    """Probability density function for exponential decay
+    distributions at high mass beyond the pole position.
+
+    Defines a probability density function which has exponential decay 
+    distribution at high mass beyond the pole position (say, Z peak)  
+    but turns over (i.e., error function) at low mass due to threshold 
+    effect. We use this to model the background shape in Z->ll invariant 
+    mass.
+    """
+    e = erfc((alpha - x) * beta)
+    u = (x - peak) * gamma
+
+    return (u < -70) * e * 1e20 + np.logical_and(u >= -70, u <= 70) * e * np.exp(-u)
+
+
+def grindhammer(t, alpha, beta, E):
+    """Gamma distribution to fit longitudial shower shapes in particles calorimeters.
+
+    See equation 2 in https://arxiv.org/pdf/hep-ex/0001020v1.pdf
+    """
+    return E * ((beta * t) ** (alpha - 1) * beta * np.exp(-beta * t)) / scipy.special.gamma(alpha)
