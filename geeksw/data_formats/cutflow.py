@@ -1,7 +1,7 @@
 import numpy as np
 
-class Cutflow(object):
 
+class Cutflow(object):
     @staticmethod
     def frommasks(masks, labels):
         cutflow = Cutflow()
@@ -11,7 +11,7 @@ class Cutflow(object):
         efficiencies = []
         for mask in masks:
             _mask = np.logical_and(_mask, mask)
-            efficiencies.append(float(np.sum(_mask))/cutflow._nbegin)
+            efficiencies.append(float(np.sum(_mask)) / cutflow._nbegin)
 
         cutflow._efficiencies = np.array(efficiencies)
         cutflow._nend = np.sum(_mask)
@@ -49,7 +49,7 @@ class Cutflow(object):
         i = 0
         for label, eff in zip(self._labels, self._efficiencies):
             i = i + 1
-            s += "\n    "+str(i)+ ". " + label + ": {0:.1f} %".format(100 * eff)
+            s += "\n    " + str(i) + ". " + label + ": {0:.1f} %".format(100 * eff)
         return s
 
     def __mul__(self, other):
@@ -76,15 +76,11 @@ class Cutflow(object):
         series = pd.Series(data=self._efficiencies, index=self._labels)[::-1]
         series.plot(kind="barh", fill=False)
         ax = plt.gca()
-        xlim = plt.xlim(0., 1.)
+        xlim = plt.xlim(0.0, 1.0)
         d = xlim[1] - xlim[0]
         i = 0
         for lbl, val in zip(series.index, series.values):
-            ax.text(
-                0.02,
-                i - 0.05,
-                lbl + "  " + "{0:.2f} %".format(100*val)
-            )
+            ax.text(0.02, i - 0.05, lbl + "  " + "{0:.2f} %".format(100 * val))
             i = i + 1
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)

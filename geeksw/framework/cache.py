@@ -8,7 +8,7 @@ import awkward
 from .utils import mkdir
 from .stream import StreamList
 
-vetoed_classnames = ["UprootIOWrapper", "JaggedArrayMethods"]
+vetoed_classnames = ["UprootIOWrapper", "JaggedArrayMethods", "Cutflow"]
 
 
 def _save_to_cache(filename, item):
