@@ -61,10 +61,13 @@ def zpairs(particles, z_mass=91.19, return_by_charge=False):
     return negative_idx.concatenate([positive_idx], axis=1)
 
 
-def crossclean(particles, others, delta_r=0.4):
+def match(particles, others, delta_r=0.4):
     eta_combs = particles.eta.cross(others.eta, nested=True)
     phi_combs = particles.phi.cross(others.phi, nested=True)
 
-    mask = ~((phi_combs.i1 - phi_combs.i0) ** 2 + (eta_combs.i1 - eta_combs.i0) ** 2 < delta_r ** 2).any()
+    return ((phi_combs.i1 - phi_combs.i0) ** 2 + (eta_combs.i1 - eta_combs.i0) ** 2 < delta_r ** 2).any()
 
-    return particles[mask]
+
+def crossclean(particles, others, delta_r=0.4):
+
+    return particles[~match(particles, others, delta_r=delta_r)]

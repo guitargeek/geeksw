@@ -29,6 +29,14 @@ class Cutflow(object):
         return self._efficiencies[-1]
 
     @property
+    def nbegin(self):
+        return self._nbegin
+
+    @property
+    def nend(self):
+        return self._nend
+
+    @property
     def efficiencies(self):
         return self._efficiencies
 

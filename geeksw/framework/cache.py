@@ -6,6 +6,7 @@ import h5py
 import awkward
 from collections import OrderedDict
 import uproot_methods
+import numpy as np
 
 from .utils import mkdir
 from .stream import StreamList
@@ -45,7 +46,7 @@ def _save_to_cache(filename, item):
             if classname == "JaggedArray":
                 ah5["data"] = awkward_utils.ascontiguousarray(item)
             else:
-                ah5["data"] = item
+                ah5["data"] = np.ascontiguousarray(item)
         return
 
     # For TLorentsVectorArray from ptetaphimass
