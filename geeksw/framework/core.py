@@ -29,7 +29,10 @@ def load_producers(producers_path):
     return producers
 
 
-def match_product(product, func):
+def match_product(product, func, verbose=False):
+
+    if verbose:
+        print("Matching product "+product+"...")
 
     regex = re.sub("<[^<>]*>", "[^/]*", func.product)
     match = re.match(".*" + regex + "$", product)
@@ -52,6 +55,9 @@ def match_product(product, func):
     # Penalize matching depth score with number of template specializations
     # to give priority to full specializations.
     score = score - len(group.split("/")) / 100.0
+
+    if verbose:
+        print(func.product, score)
 
     return group, score
 

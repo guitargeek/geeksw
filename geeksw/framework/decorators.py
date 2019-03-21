@@ -18,7 +18,7 @@ def consumes(**requirements):
     return wrapper
 
 
-def one_producer(product_names, stream=False, cache=True):
+def one_producer(product_names, stream=False, cache=True, merged=True):
     if isinstance(product_names, list) and len(product_names) > 1:
         raise ValueError("Producers functions with more than one product not supported yet!")
     product_name = product_names
@@ -26,13 +26,15 @@ def one_producer(product_names, stream=False, cache=True):
     def one_wrapper(func):
         @functools.wraps(func)
         def producer_func(**inputs):
-            for k1, product in inputs.items():
-                if isinstance(product, StreamList):
-                    inputs[k1] = product.aggregate()
-                if isinstance(product, ExpandedProduct):
-                    for k2, subproduct in product.items():
-                        if isinstance(subproduct, StreamList):
-                            inputs[k1][k2] = subproduct.aggregate()
+
+            if merged:
+                for k1, product in inputs.items():
+                    if isinstance(product, StreamList):
+                        inputs[k1] = product.aggregate()
+                    if isinstance(product, ExpandedProduct):
+                        for k2, subproduct in product.items():
+                            if isinstance(subproduct, StreamList):
+                                inputs[k1][k2] = subproduct.aggregate()
 
             if stream:
                 return StreamList(func(**inputs))

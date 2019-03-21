@@ -154,7 +154,7 @@ class FrameworkCache(object):
         return _get_from_cache(filename)
 
     def _get_file(self, key):
-        cache_file_wo_suffix = os.path.join(self.cache_dir, key.replace("/", "_"))
+        cache_file_wo_suffix = os.path.join(self.cache_dir, key.replace("/", "_")) + "__"
         res = glob.glob(cache_file_wo_suffix + "*")
         if res:
             return res[0]
