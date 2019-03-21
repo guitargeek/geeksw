@@ -7,6 +7,7 @@ import awkward
 from collections import OrderedDict
 import uproot_methods
 import numpy as np
+import torch
 
 from .utils import mkdir
 from .stream import StreamList
@@ -66,6 +67,11 @@ def _save_to_cache(filename, item):
                 ah5[k] = awkward_utils.ascontiguousarray(a)
         return
 
+    # for pytorch nn models
+    if issubclass(type(item), torch.nn.Module):
+        torch.save(item, filename+".pt")
+        return
+
     with open(filename + ".pkl", "wb") as f:
         pickle.dump(item, f)
     return
@@ -103,6 +109,12 @@ def _get_from_cache(filename):
             ah5 = awkward.hdf5(hf)
             array = ah5["data"]
         return array
+
+    # for pytorch nn models
+    if filename.endswith(".pt"):
+        model = torch.load(filename)
+        model.eval()
+        return model
 
     if filename.endswith(".pkl"):
         with open(filename, "rb") as pf:
