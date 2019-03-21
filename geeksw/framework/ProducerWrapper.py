@@ -1,3 +1,6 @@
+from .stream import StreamList
+
+
 def expand_wildcard(product, datasets):
     if not "*" in product:
         return [product]
@@ -52,6 +55,9 @@ class ProducerWrapper(object):
             for k in inputs:
                 try:
                     inputs[k].subs = self.subs
+                    if isinstance(inputs[k], StreamList):
+                        for j in range(len(inputs[k])):
+                            inputs[k][j].subs = self.subs
                 except:
                     pass
 
