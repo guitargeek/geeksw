@@ -11,7 +11,7 @@ def list_files(dataset_name):
     file_list = os.popen(cmd).read()
     file_list = [f.strip() for f in file_list.split("\n") if ".root" in f]
     file_list.sort()
-    return file_list
+    return sorted(file_list)
 
 
 def open_files(dataset, server):

@@ -43,7 +43,7 @@ class Test(unittest.TestCase):
         datasets = ["/WWZ"]
         products = ["/WWZ/merged"]
 
-        record = fwk.produce(products=products, producers=producers, datasets=datasets, max_workers=32)
+        record = fwk.produce(products=products, producers=producers, datasets=datasets, n_stream_workers=32)
 
         print("Length of final record:")
         print(len(record["WWZ/merged"]))

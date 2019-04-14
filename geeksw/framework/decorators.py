@@ -25,7 +25,7 @@ def one_producer(product_names, stream=False, cache=True, merged=True):
 
     def one_wrapper(func):
         @functools.wraps(func)
-        def producer_func(**inputs):
+        def producer_func(n_stream_workers=None, **inputs):
 
             if merged:
                 for k1, product in inputs.items():
@@ -58,7 +58,7 @@ def stream_producer(product_names, cache=True):
 
     def stream_wrapper(func):
         @functools.wraps(func)
-        def producer_func(**inputs):
+        def producer_func(n_stream_workers=1, **inputs):
             stream_list_lengths = set([len(v) for v in inputs.values() if isinstance(v, StreamList)])
 
             if len(stream_list_lengths) == 0:
@@ -76,8 +76,11 @@ def stream_producer(product_names, cache=True):
                 for i in range(n):
                     sinputs[i][k] = v[i] if isstream else v
 
-            with ThreadPoolExecutor(max_workers=32) as executor:
-                results = MultiFuture([executor.submit(func, **sinputs[i]) for i in range(n)]).result()
+            if n_stream_workers > 1:
+                with ThreadPoolExecutor(max_workers=n_stream_workers) as executor:
+                    results = MultiFuture([executor.submit(func, **sinputs[i]) for i in range(n)]).result()
+            else:
+                results = [func(**sinputs[i]) for i in range(n)]
             return StreamList(results)
 
         producer_func.product = product_name

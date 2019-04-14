@@ -40,7 +40,7 @@ class Test(unittest.TestCase):
                 torch.nn.Linear(20, 8),
                 torch.nn.ReLU(),
                 torch.nn.Linear(8, 2),
-                torch.nn.LogSoftmax(),
+                torch.nn.LogSoftmax(dim=1),
             ).double()
 
             learning_rate = 1e-3

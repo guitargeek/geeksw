@@ -51,7 +51,7 @@ class Test(unittest.TestCase):
             products=products,
             producers=producers,
             datasets=datasets,
-            max_workers=32,
+            n_stream_workers=32,
             cache_time=0.0,
             cache_dir=cache_dir,
         )
@@ -60,7 +60,7 @@ class Test(unittest.TestCase):
             products=products,
             producers=producers,
             datasets=datasets,
-            max_workers=32,
+            n_stream_workers=32,
             cache_time=0.0,
             cache_dir=cache_dir,
         )
@@ -83,7 +83,7 @@ class Test(unittest.TestCase):
             products=products,
             producers=producers,
             datasets=datasets,
-            max_workers=32,
+            n_stream_workers=32,
             cache_time=0.0,
             cache_dir=cache_dir,
         )
@@ -92,7 +92,7 @@ class Test(unittest.TestCase):
             products=products,
             producers=producers,
             datasets=datasets,
-            max_workers=32,
+            n_stream_workers=32,
             cache_time=0.0,
             cache_dir=cache_dir,
         )

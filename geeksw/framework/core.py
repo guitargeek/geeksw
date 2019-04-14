@@ -64,7 +64,8 @@ def match_product(product, func, verbose=False):
 
 def get_required_producers(product, producer_funcs, datasets, record, cache):
 
-    if product in cache:
+    if product in cache and not product in record:
+        print("Loading  " + product + "from cache...")
         record[product] = cache[product]
         return []
 
@@ -89,7 +90,7 @@ def get_required_producers(product, producer_funcs, datasets, record, cache):
 
 
 def produce(
-    products=None, producers=[], datasets=None, max_workers=32, cache_time=2, verbosity=1, cache_dir=".geeksw_cache"
+    products=None, producers=[], datasets=None, n_stream_workers=1, cache_time=2, verbosity=1, cache_dir=".geeksw_cache"
 ):
 
     target_products = products
@@ -127,7 +128,7 @@ def produce(
         if verbosity > 0:
             print("Producing " + pname + "...")
 
-        record[producers[ip].product] = producers[ip].run(record)
+        record[producers[ip].product] = producers[ip].run(record, n_stream_workers=n_stream_workers)
 
         requirements_all = []
         for ipremain in exec_order[i + 1 :]:

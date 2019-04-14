@@ -21,11 +21,10 @@ def trim_name(name):
 
 def load_datasets(names, cache=ScratchCache(), server="polgrid4.in2p3.fr"):
 
-    names = [trim_name(n) for n in names]
-
     if type(names) == str:
         names = [names]
     if type(names) == list:
+        names = [trim_name(n) for n in sorted(names)]
         datasets = [Dataset(n, server, lazy=True) for n in names]
     else:
         raise TypeError("Argument names has to be string or list")

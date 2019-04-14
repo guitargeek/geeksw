@@ -43,7 +43,7 @@ class ProducerWrapper(object):
             list(requirements.values()) + ["->", product] + ["(cache disabeled)" * int(not self.cache)]
         )
 
-    def run(self, record):
+    def run(self, record, n_stream_workers=1):
         inputs = {}
         for k, req in self.requirements.items():
             if len(req) > 1:
@@ -61,7 +61,7 @@ class ProducerWrapper(object):
                 except:
                     pass
 
-        return self.func(**inputs)
+        return self.func(n_stream_workers, **inputs)
 
     def __eq__(self, other):
         """ Check if producer has same template specialization.
