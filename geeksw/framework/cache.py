@@ -69,7 +69,7 @@ def _save_to_cache(filename, item):
 
     # for pytorch nn models
     if issubclass(type(item), torch.nn.Module):
-        torch.save(item, filename+".pt")
+        torch.save(item, filename + ".pt")
         return
 
     with open(filename + ".pkl", "wb") as f:

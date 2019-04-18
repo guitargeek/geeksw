@@ -98,32 +98,32 @@ def grindhammer(t, alpha, beta, E):
 
 
 def p0gausexp(x, y, yerr):
-    
+
     # Get mu
     mu_idx = np.argmax(y)
     mu = x[mu_idx]
-    
+
     # get index ranges left and right of mu
     left_range = np.arange(len(x))[:mu_idx]
-    right_range = np.arange(len(x))[mu_idx+1:]
-    
-    left_range = left_range[-len(right_range):]
+    right_range = np.arange(len(x))[mu_idx + 1 :]
+
+    left_range = left_range[-len(right_range) :]
     right_range = right_range[::-1]
-    
+
     x_tail = x[left_range]
     y_left = y[left_range]
     y_right = y[right_range]
     yerr_left = yerr[left_range]
     yerr_right = yerr[right_range]
-    
-    k = (np.sum(np.sqrt((y_left - y_right)**2/(yerr_left*yerr_right)) < 1.) + 0.5) * (x[1] - x[0])
-    
+
+    k = (np.sum(np.sqrt((y_left - y_right) ** 2 / (yerr_left * yerr_right)) < 1.0) + 0.5) * (x[1] - x[0])
+
     N = y[mu_idx]
-        
+
     x_mirror = np.concatenate([x[left_range], [mu], x[right_range]])
     y_mirror = np.concatenate([y[right_range], [y[mu_idx]], y[right_range]])
-    
-    sigma = np.sqrt(np.average((x_mirror - mu)**2, weights=y_mirror))
-    k = k/sigma
-    
+
+    sigma = np.sqrt(np.average((x_mirror - mu) ** 2, weights=y_mirror))
+    k = k / sigma
+
     return [N, mu, sigma, k]

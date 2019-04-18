@@ -23,7 +23,7 @@ def open_files(dataset, server):
         # try:
         opened_files.append(uproot.open(path))
         # except:
-            # IOError("The file " + path + " could not be opened. Is it available on this site?")
+        # IOError("The file " + path + " could not be opened. Is it available on this site?")
     return opened_files
 
 
@@ -65,7 +65,7 @@ class Dataset(object):
             return tree.array(basename)
 
         # with ThreadPoolExecutor(max_workers=32) as executor:
-            # arrays = [executor.submit(load_array, i, f) for i, f in enumerate(self.files)]
+        # arrays = [executor.submit(load_array, i, f) for i, f in enumerate(self.files)]
         arrays = [load_array(i, f) for i, f in enumerate(self.files)]
         array = concatenate(arrays)
         print("loaded arrays of length " + " + ".join([str(len(a)) for a in arrays]) + " = " + str((len(array))))

@@ -95,7 +95,9 @@ def _test_cache(self, producers, test_disabeled=False, data_transf=lambda a: a, 
     np.testing.assert_array_almost_equal(data_transf(record["data"]), a_transf(a))
 
     a[:] = np.random.normal(size=n) + 1.0
-    record = fwk.produce(products=["/data"], producers=producers, n_stream_workers=32, cache_time=0.0, cache_dir=cache_dir)
+    record = fwk.produce(
+        products=["/data"], producers=producers, n_stream_workers=32, cache_time=0.0, cache_dir=cache_dir
+    )
 
     shutil.rmtree(cache_dir)
 

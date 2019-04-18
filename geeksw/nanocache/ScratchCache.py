@@ -41,5 +41,5 @@ class ScratchCache(object):
         if isinstance(array, np.ndarray):
             print("got ndarray of length " + str(len(array)))
         else:
-            print("got jagged array of length " + str(len(array)) + " (flattened "+str(len(array.flatten()))+")")
+            print("got jagged array of length " + str(len(array)) + " (flattened " + str(len(array.flatten())) + ")")
         return array

@@ -32,7 +32,7 @@ def load_producers(producers_path):
 def match_product(product, func, verbose=False):
 
     if verbose:
-        print("Matching product "+product+"...")
+        print("Matching product " + product + "...")
 
     regex = re.sub("<[^<>]*>", "[^/]*", func.product)
     match = re.match(".*" + regex + "$", product)
