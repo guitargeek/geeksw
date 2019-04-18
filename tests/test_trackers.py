@@ -1,5 +1,5 @@
 import unittest
-from geeksw.caching import FHashCacheTracker, untrack
+from geeksw.caching import FHashCacheTracker
 
 
 class Test(unittest.TestCase):
@@ -17,7 +17,7 @@ class Test(unittest.TestCase):
 
         name = "Joe"
 
-        untrack(say_hello(add_lastname(name)))
+        say_hello(add_lastname(name))
 
     def test_FHashCacheTracker(self):
 
@@ -33,7 +33,7 @@ class Test(unittest.TestCase):
 
         name = "Joe"
 
-        untrack(say_hello(add_lastname(name)))
+        say_hello(add_lastname(name))
 
 
 if __name__ == "__main__":

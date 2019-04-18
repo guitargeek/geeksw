@@ -151,3 +151,25 @@ class IndexedCache(object):
 
         out = self._load(os.path.join(self._path, key), type_name)
         return out
+
+    def __delitem__(self, key):
+        try:
+            os.remove(os.path.join(self._path, key))
+        except:
+            pass
+
+        lock = LockFile(self._lock_filename)
+        lock.acquire()
+
+        try:
+            with open(self._index_filename, "r") as f:
+                index = json.load(f)
+        except:
+            index = dict()
+
+        del index[key]
+
+        with open(self._index_filename, "w") as f:
+            json.dump(index, f, indent=4)
+
+        lock.release()
