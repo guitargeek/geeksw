@@ -1,4 +1,7 @@
 import time
+from hashlib import md5
+
+from .indexed_cache import IndexedCache
 
 
 def iterable(a):
@@ -26,7 +29,7 @@ def untrack(x):
         return x
 
 
-def FHashCacheTracker(cache=dict(), strict=True, verbosity=0):
+def FHashCacheTracker(cache=IndexedCache(), strict=True, verbosity=0):
 
     from functools import wraps
     import inspect
@@ -35,63 +38,65 @@ def FHashCacheTracker(cache=dict(), strict=True, verbosity=0):
         if verbosity >= 1:
             print(s)
 
-    class HashHandle(Handle):
-        def __init__(self, product, hash):
+    class SourceHandle(Handle):
+        def __init__(self, product, source):
             self._product = product
-            self._hash = hash
+            self._source = source
 
         @property
         def product(self):
             return self._product
 
-        def __hash__(self):
-            return self._hash
+        @property
+        def source(self):
+            return self._source
 
         def __repr__(self):
-            return "<HashHandle " + self._product.__repr__() + ">"
+            return "<SourceHandle " + self._product.__repr__() + ">"
 
     def unwrap_handles(handles, strict=True):
         if not iterable(handles):
             handles = (handles,)
         products = []
-        combined_hash = 0
+        combined_source = ""
         for h in handles:
-            if isinstance(h, HashHandle):
+            if isinstance(h, SourceHandle):
                 products.append(h.product)
+                combined_source += h.source
             else:
                 products.append(h)
-            try:
-                combined_hash ^= hash(h)
-            except TypeError:
-                if strict:
-                    raise TypeError("with strict=True, you can only unwrap handles or other hashable types")
+                try:
+                    combined_source += h
+                except TypeError:
+                    if strict:
+                        raise TypeError("with strict=True, you can only use SourceHandles or strings to allow hashing")
 
-        return products, combined_hash
+        return products, combined_source
 
     def tracks_decorator(func):
         source = inspect.getsource(func)
-        source_hash = hash(source)
 
         @wraps(func)
         def func_wrapper(*handle_args, **handle_kwargs):
 
-            args, args_hash = tuple(), 0
-            kwargs, kwargs_hash = dict(), 0
+            args, args_source = tuple(), ""
+            kwargs, kwargs_source = dict(), ""
 
             if handle_args:
-                args, args_hash = unwrap_handles(handle_args)
+                args, args_source = unwrap_handles(handle_args)
 
             if handle_kwargs:
                 kwargs_keys, handle_kwargs_values = zip(*[(k, v) for k, v in handle_kwargs.items()])
-                kwargs_values, kwargs_hash = unwrap_handles(handle_kwargs_values)
+                kwargs_values, kwargs_source = unwrap_handles(handle_kwargs_values)
                 kwargs = dict(zip(kwargs_keys, kwargs_values))
 
-            output_hash = args_hash ^ kwargs_hash ^ source_hash
+            output_source = args_source + kwargs_source + source
+            output_hash = md5(output_source.encode("utf-8")).hexdigest()
 
             if output_hash in cache:
                 elapsed_time, output = timer(lambda: cache[output_hash])
                 log(func.__name__ + ": loading result from cache took {0:.2f} s".format(elapsed_time))
-                return HashHandle(output, output_hash)
+                return SourceHandle(output, output_source)
 
             elapsed_time, output = timer(lambda: func(*args, **kwargs))
 
@@ -104,7 +109,7 @@ def FHashCacheTracker(cache=dict(), strict=True, verbosity=0):
                 + ": calculating result took {0:.2f} s, caching {1:.2f} s".format(elapsed_time, caching_time)
             )
 
-            return HashHandle(output, output_hash)
+            return SourceHandle(output, output_source)
 
         return func_wrapper
 
