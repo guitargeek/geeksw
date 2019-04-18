@@ -19,10 +19,11 @@ def open_files(dataset, server):
     opened_files = []
     for f in files:
         path = "root://" + server + "/" + f
-        try:
-            opened_files.append(uproot.open(path))
-        except:
-            IOError("The file " + path + " could not be opened. Is it available on this site?")
+        print("opening file " + f + "...")
+        # try:
+        opened_files.append(uproot.open(path))
+        # except:
+            # IOError("The file " + path + " could not be opened. Is it available on this site?")
     return opened_files
 
 
@@ -63,9 +64,11 @@ class Dataset(object):
             tree = f[dirname]
             return tree.array(basename)
 
-        with ThreadPoolExecutor(max_workers=32) as executor:
-            arrays = [executor.submit(load_array, i, f) for i, f in enumerate(self.files)]
-        array = concatenate([a.result() for a in arrays])
+        # with ThreadPoolExecutor(max_workers=32) as executor:
+            # arrays = [executor.submit(load_array, i, f) for i, f in enumerate(self.files)]
+        arrays = [load_array(i, f) for i, f in enumerate(self.files)]
+        array = concatenate(arrays)
+        print("loaded arrays of length " + " + ".join([str(len(a)) for a in arrays]) + " = " + str((len(array))))
 
         if not cache is None:
             cache[cache_key] = array

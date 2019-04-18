@@ -14,6 +14,7 @@ class UprootIOWrapper(object):
     def array(self, key):
         full_key = os.path.join(self._working_dir, key)
         arrays = [dset.array(full_key, self._cache) for dset in self._datasets]
+        print([len(a.flatten()) for a in arrays])
         return concatenate(arrays)
 
     def __getitem__(self, key):

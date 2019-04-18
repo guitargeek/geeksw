@@ -56,8 +56,8 @@ def match_product(product, func, verbose=False):
     # to give priority to full specializations.
     score = score - len(group.split("/")) / 100.0
 
-    if verbose:
-        print(func.product, score)
+    # if verbose:
+    # print(func.product, score)
 
     return group, score
 
@@ -83,7 +83,10 @@ def get_required_producers(product, producer_funcs, datasets, record, cache):
     working_dir = product[: -len(group)]
     producers = [ProducerWrapper(func, subs, working_dir, datasets)]
 
+    # print("Requirements for " + product + ":")
+
     for req in producers[0].flattened_requirements:
+        # print("    " + req)
         producers += get_required_producers(req, producer_funcs, datasets, record, cache)
 
     return producers
