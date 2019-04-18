@@ -4,5 +4,6 @@ h5py
 matplotlib
 numpy
 pandas
+lockfile
 uproot
 uproot - methods

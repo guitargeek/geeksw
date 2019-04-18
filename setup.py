@@ -24,6 +24,7 @@ setup(
         "futures",
         "uproot-methods",
         "torch",
+        "lockfile",
         "tables",
     ],
 )
