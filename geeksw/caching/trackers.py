@@ -22,10 +22,12 @@ class Handle(object):
     pass
 
 
-def FHashCacheTracker(cache=IndexedCache(), strict=True, verbosity=0):
+def FHashCacheTracker(cache_dir="~/.cache/geeksw", strict=True, verbosity=0):
 
     from functools import wraps
     import inspect
+
+    cache = IndexedCache(path=cache_dir)
 
     def log(s):
         if verbosity >= 1:

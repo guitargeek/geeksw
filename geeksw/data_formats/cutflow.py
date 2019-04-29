@@ -9,14 +9,16 @@ class Cutflow(object):
         cutflow._labels = labels
         cutflow._nbegin = len(masks[0])
         efficiencies = []
+        _masks = []
         for mask in masks:
             _mask = np.logical_and(_mask, mask)
+            _masks.append(_mask)
             efficiencies.append(float(np.sum(_mask)) / cutflow._nbegin)
 
         cutflow._efficiencies = np.array(efficiencies)
         cutflow._nend = np.sum(_mask)
 
-        cutflow._mask = _mask
+        cutflow._masks = _masks
 
         return cutflow
 
@@ -42,10 +44,16 @@ class Cutflow(object):
 
     @property
     def mask(self):
-        return self._mask
+        return self._masks[-1]
 
     def __call__(self, array):
-        return array[self._mask]
+        if len(array) == len(self._masks[-1]):
+            return array[self._masks[-1]]
+
+        for m in self._masks[:len(self._masks) - 1]:
+            if np.sum(m) == len(array):
+                return array[self._masks[-1][m]]
+        raise ValueError("The cutflow can't automatically determine what to do.")
 
     def __repr__(self):
         s = "<Cutflow"
@@ -75,8 +83,10 @@ class Cutflow(object):
         cutflow._nbegin = self._nbegin
         cutflow._nend = other._nend
 
-        cutflow._mask = self._mask.copy()
-        cutflow._mask[cutflow._mask] = other._mask
+        cutflow._masks = [m.copy() for m in self._masks]
+        for m in other._masks:
+            cutflow._masks.append(self._masks[-1].copy())
+            cutflow._masks[-1][cutflow._masks[-1]] = m
 
         return cutflow
 
