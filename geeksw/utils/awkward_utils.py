@@ -34,3 +34,12 @@ def selection2mask(selection, array):
     starts = offsets[:-1]
     stops = offsets[1:]
     return awkward.JaggedArray(starts, stops, mask)
+
+
+def jagged_single_flatten_fillna(array, value):
+    if np.max(array.counts) > 1:
+        raise ValueError("There should not be no more than one element per jagged entry!")
+    out = np.zeros(len(array)) + value
+    out[array.counts > 0] = array.flatten()
+
+    return out
