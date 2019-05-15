@@ -26,5 +26,6 @@ setup(
         "torch",
         "lockfile",
         "tables",
+        "tqdm",
     ],
 )

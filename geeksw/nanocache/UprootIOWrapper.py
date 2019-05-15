@@ -1,4 +1,5 @@
 import os
+import uproot
 
 
 from ..utils.core import concatenate
@@ -14,7 +15,6 @@ class UprootIOWrapper(object):
     def array(self, key):
         full_key = os.path.join(self._working_dir, key)
         arrays = [dset.array(full_key, self._cache) for dset in self._datasets]
-        print([len(a.flatten()) for a in arrays])
         return concatenate(arrays)
 
     def __getitem__(self, key):
@@ -23,13 +23,15 @@ class UprootIOWrapper(object):
         return out
 
     def keys(self):
+        opened_file = uproot.open(self._datasets[0].files[0])
         if self._working_dir == "":
-            return self._datasets[0].files[0].keys()
-        keys = self._datasets[0].files[0][self._working_dir].keys()
+            return opened_file.keys()
+        keys = opened_file[self._working_dir].keys()
         return [k.decode("utf-8") for k in keys]
 
     def allkeys(self):
+        opened_file = uproot.open(self._datasets[0].files[0])
         if self._working_dir == "":
-            return self._datasets[0].files[0].keys()
-        keys = self._datasets[0].files[0][self._working_dir].allkeys()
+            return opened_file.allkeys()
+        keys = opened_file[self._working_dir].allkeys()
         return [k.decode("utf-8") for k in keys]
