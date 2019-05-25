@@ -75,7 +75,7 @@ class RocPlot(object):
 
         fpr, tpr, _ = metrics.roc_curve(y_true, y_score, pos_label=pos_label, sample_weight=sample_weight)
 
-        self.auc.append(metrics.roc_auc_score(y_true, y_score))
+        self.auc.append(metrics.roc_auc_score(y_true, y_score, pos_label=pos_label, sample_weight=sample_weight))
 
         if not hasattr(self, "fpr_ref"):
             self.fpr_ref = fpr
