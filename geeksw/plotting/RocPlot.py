@@ -71,9 +71,9 @@ class RocPlot(object):
 
         self._plotted_first = False
 
-    def plot(self, y_true, y_score, **kwargs):
+    def plot(self, y_true, y_score, pos_label=None, sample_weight=None, **kwargs):
 
-        fpr, tpr, _ = metrics.roc_curve(y_true, y_score)
+        fpr, tpr, _ = metrics.roc_curve(y_true, y_score, pos_label=pos_label, sample_weight=sample_weight)
 
         self.auc.append(metrics.roc_auc_score(y_true, y_score))
 
