@@ -15,6 +15,10 @@ addons:
     packages:
       - python-setuptools
       - libhdf5-serial-dev
+      - pandoc
+      - python-pygments
+      - python3-pygments
+      - nodejs
 
 script:
   python setup.py pytest

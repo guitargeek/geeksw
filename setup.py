@@ -14,7 +14,7 @@ setup(
     zip_safe=False,
     test_suite="tests",
     setup_requires=["pytest-runner"],
-    tests_require=["pytest", "pandas", "sklearn", "scipy"],
+    tests_require=["pytest", "pandas", "sklearn", "scipy", "jupyter", "nbconvert"],
     install_requires=[
         "numpy",
         "matplotlib",
