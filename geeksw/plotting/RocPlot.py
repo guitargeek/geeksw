@@ -74,7 +74,7 @@ class RocPlot(object):
     def plot(self, y_true, y_score, pos_label=None, sample_weight=None, **kwargs):
 
         fpr, tpr, _ = metrics.roc_curve(y_true, y_score, pos_label=pos_label, sample_weight=sample_weight)
-        
+
         try:
             self.auc.append(metrics.roc_auc_score(y_true, y_score))
         except:
