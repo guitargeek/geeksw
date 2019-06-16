@@ -60,7 +60,10 @@ class Cutflow(object):
         for label, eff in zip(self._labels, self._efficiencies):
             if s[-1] != "w":
                 s += ","
-            s += " (" + label + ", {0:.4f} %)".format(100 * eff)
+            if eff * 100 > 0.01:
+                s += " (" + label + ": {0:.4f} %)".format(eff * 100)
+            else:
+                s += " (" + label + ": {0:.2e})".format(eff)
         s += ">"
         return s
 
