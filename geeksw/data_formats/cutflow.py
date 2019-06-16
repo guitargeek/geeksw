@@ -50,7 +50,7 @@ class Cutflow(object):
         if len(array) == len(self._masks[-1]):
             return array[self._masks[-1]]
 
-        for m in self._masks[:len(self._masks) - 1]:
+        for m in self._masks[: len(self._masks) - 1]:
             if np.sum(m) == len(array):
                 return array[self._masks[-1][m]]
         raise ValueError("The cutflow can't automatically determine what to do.")
