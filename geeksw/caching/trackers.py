@@ -32,6 +32,9 @@ class Tracker(object):
 
         self._method_decorator = tracker_decorator(decorate_method=True)
 
+    def __call__(self, f):
+        return self._function_decorator(f)
+
     @property
     def function(self):
         return self._function_decorator
@@ -82,10 +85,17 @@ def make_f_hash_cache_tracker(cache_dir="~/.cache/geeksw", strict=True, verbosit
             else:
                 products.append(h)
                 try:
-                    combined_source += h
+                    try:
+                        combined_source += h
+                    except:
+                        if iterable(h):
+                            for x in h:
+                                combined_source += x
                 except TypeError:
                     if strict:
-                        raise TypeError("with strict=True, you can only use SourceHandles or strings to allow hashing")
+                        raise TypeError(
+                            "with strict=True, you can only use SourceHandles or types convertable to (iterables) of strings to allow hashing"
+                        )
 
         return products, combined_source
 
@@ -127,7 +137,10 @@ def make_f_hash_cache_tracker(cache_dir="~/.cache/geeksw", strict=True, verbosit
                     log(func.__name__ + ": loading result from cache took {0:.2f} s".format(elapsed_time) + info)
                     return SourceHandle(output, output_source)
 
-                f = lambda: func(self, *args, **kwargs) if decorate_method else lambda: func(*args, **kwargs)
+                if decorate_method:
+                    f = lambda: func(self, *args, **kwargs)
+                else:
+                    f = lambda: func(*args, **kwargs)
                 elapsed_time, output = timer(f)
 
                 def c():

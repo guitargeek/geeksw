@@ -46,13 +46,20 @@ class Cutflow(object):
     def mask(self):
         return self._masks[-1]
 
-    def __call__(self, array):
-        if len(array) == len(self._masks[-1]):
-            return array[self._masks[-1]]
+    def __call__(self, array, cut_label=None):
 
-        for m in self._masks[: len(self._masks) - 1]:
+        if cut_label is None:
+            cut_label = self._labels[-1]
+
+        cut_index = self._labels.index(cut_label)
+        mask = self._masks[cut_index]
+
+        if len(array) == len(mask):
+            return array[mask]
+
+        for m in self._masks[:cut_index]:
             if np.sum(m) == len(array):
-                return array[self._masks[-1][m]]
+                return array[mask[m]]
         raise ValueError("The cutflow can't automatically determine what to do.")
 
     def __repr__(self):
@@ -67,12 +74,15 @@ class Cutflow(object):
         s += ">"
         return s
 
-    def prettyprint(self):
+    def __str__(self):
         s = "Cutflow:"
         i = 0
         for label, eff in zip(self._labels, self._efficiencies):
             i = i + 1
-            s += "\n    " + str(i) + ". " + label + ": {0:.1f} %".format(100 * eff)
+            if eff * 100 > 0.01:
+                s += "\n    " + str(i) + ". " + label + ": {0:.4f} %)".format(eff * 100)
+            else:
+                s += "\n    " + str(i) + ". " + label + ": {0:.2e})".format(eff)
         return s
 
     def __mul__(self, other):
@@ -93,12 +103,17 @@ class Cutflow(object):
 
         return cutflow
 
-    @property
     def series(self):
 
         import pandas as pd
 
-        return pd.Series(data=self._efficiencies, index=self._labels)[::-1]
+        return pd.Series(data=self._efficiencies, index=self._labels)
+
+    def pandas(self):
+
+        import pandas as pd
+
+        return pd.DataFrame(dict(efficiency=self._efficiencies, label=self._labels))
 
     def plot(self):
 

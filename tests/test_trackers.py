@@ -23,7 +23,7 @@ class Test(unittest.TestCase):
 
         tracker = make_f_hash_cache_tracker(strict=True, verbosity=1)
 
-        @tracker.function
+        @tracker
         def add_lastname(name):
             return name + " Doe"
 
