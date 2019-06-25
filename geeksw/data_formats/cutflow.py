@@ -40,9 +40,7 @@ class Cutflow(object):
         cutflow._masks = masks
         cutflow._flags = np.zeros(len(cutflow._masks), dtype=np.int) + CutFlag.normal
 
-        cutflow._n_events = [len(masks[0])]
-
-        cutflow._calculate_efficiencies()
+        cutflow._update_state()
 
         return cutflow
 
@@ -79,18 +77,27 @@ class Cutflow(object):
 
         mask_prev = np.ones(self.nbegin, dtype=np.bool)
 
+        match = False
+
         for i in range(cut_index + 1):
             if len(array) == self._n_events[i]:
+                if match:
+                    raise ValueError("Ambiguity error when calling cutflow!!")
                 masks = [apply_flag(m, self._flags[i + j]) for j, m in enumerate(self._masks[i : cut_index + 1])]
                 mask = np.logical_and.reduce(masks)
-                return array[mask[mask_prev]]
-            mask_prev = np.logical_and(mask_prev, self._masks[i])
+                match = True
+            if not match:
+                mask_prev = np.logical_and(mask_prev, self._masks[i])
+        if match:
+            return array[mask[mask_prev]]
         if len(array) == self.nend:
             return array
 
         raise ValueError("The cutflow can't automatically determine what to do.")
 
-    def _calculate_efficiencies(self):
+    def _update_state(self):
+
+        self._n_events = [len(self._masks[0])]
 
         efficiencies = []
         n_events = [self.nbegin]
@@ -115,10 +122,10 @@ class Cutflow(object):
 
         if self._flags[cut_index] == CutFlag.normal:
             self._flags[cut_index] = CutFlag.inverted
-            self._calculate_efficiencies()
+            self._update_state()
         elif self._flags[cut_index] == CutFlag.inverted:
             self._flags[cut_index] = CutFlag.normal
-            self._calculate_efficiencies()
+            self._update_state()
 
     def disable(self, cut_label):
         cut_index = self._labels.index(cut_label)
@@ -129,7 +136,7 @@ class Cutflow(object):
             self.invert(cut_label)
 
         self._flags[cut_index] = CutFlag.disabled
-        self._calculate_efficiencies()
+        self._update_state()
 
     def enable(self, cut_label):
         cut_index = self._labels.index(cut_label)
@@ -137,7 +144,7 @@ class Cutflow(object):
             return
 
         self._flags[cut_index] = CutFlag.normal
-        self._calculate_efficiencies()
+        self._update_state()
 
     def __repr__(self):
         s = "<Cutflow"
@@ -164,25 +171,34 @@ class Cutflow(object):
         return s
 
     def __mul__(self, other):
-        if self.nend != other.nbegin:
-            raise ValueError("cutflows don't seem to match from the number of events")
 
         cutflow = Cutflow()
 
         cutflow._labels = self._labels + other._labels
-        cutflow._efficiencies = np.concatenate([self._efficiencies, other._efficiencies * self._efficiencies[-1]])
-        cutflow._n_events = np.concatenate([self._n_events, other._n_events[1:]])
+        cutflow._flags = np.zeros(len(cutflow._labels), dtype=np.int) + CutFlag.normal
 
-        cutflow._masks = [m.copy() for m in self._masks]
+        joined = False
 
-        total_mask = np.logical_and.reduce(self._masks)
+        total_mask = np.ones(self.nbegin, dtype=np.bool)
 
-        for m in other._masks:
-            cutflow._masks.append(total_mask.copy())
-            cutflow._masks[-1][total_mask] = m
+        for i, n_events_i in enumerate(self._n_events):
+            if n_events_i == other.nbegin:
+                if joined:
+                    raise ValueError("ambiguity error in cutflow!!")
+                cutflow._masks = [m.copy() for m in self._masks]
+                for m in other._masks:
+                    cutflow._masks.append(total_mask.copy())
+                    cutflow._masks[-1][total_mask] = m
+                joined = True
+            if not joined:
+                cutflow._flags[i] = CutFlag.fixed
+            if i < len(self._masks):
+                total_mask = np.logical_and(total_mask, self._masks[i])
 
-        cutflow._flags = np.zeros(len(cutflow._masks), dtype=np.int) + CutFlag.normal
-        cutflow._flags[: len(self._masks)] = CutFlag.fixed
+        if not joined:
+            raise ValueError("cutflows don't seem to match from the number of events")
+
+        cutflow._update_state()
 
         return cutflow
 
