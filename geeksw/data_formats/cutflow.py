@@ -65,10 +65,21 @@ class Cutflow(object):
         return self._efficiencies
 
     @property
-    def mask(self):
-        return self._masks[-1]
+    def masks(self):
+        return self._masks
+
+    def total_mask(self, cut_label):
+        cut_index = self._labels.index(cut_label)
+        mask = np.ones(self.nbegin, dtype=np.bool)
+
+        for i in range(cut_index + 1):
+            mask = np.logical_and(mask, apply_flag(self._masks[i], self._flags[i]))
+        return mask
 
     def __call__(self, array, cut_label=None):
+
+        if array is None:
+            return None
 
         if cut_label is None:
             cut_label = self._labels[-1]
@@ -87,7 +98,7 @@ class Cutflow(object):
                 mask = np.logical_and.reduce(masks)
                 match = True
             if not match:
-                mask_prev = np.logical_and(mask_prev, self._masks[i])
+                mask_prev = np.logical_and(mask_prev, apply_flag(self._masks[i], self._flags[i]))
         if match:
             return array[mask[mask_prev]]
         if len(array) == self.nend:
