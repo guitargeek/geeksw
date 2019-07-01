@@ -13,13 +13,13 @@ def allmap(func, l, x):
 
 
 def filteranymap(func, l1, l2):
-    """ Select all x from a for which func(x, y) for any y in l is true
+    """ Select all x from l2 for which func(x, y) for any y in l1 is true
     """
     return filter(partial(anymap, func, l1), l2)
 
 
 def filterallmap(func, l1, l2):
-    """ Select all x from a for which func(x, y) for all y in l is true
+    """ Select all x from l2 for which func(x, y) for all y in l1 is true
     """
     return filter(partial(allmap, func, l1), l2)
 

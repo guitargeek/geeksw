@@ -16,6 +16,7 @@ setup(
     setup_requires=["pytest-runner"],
     tests_require=["pytest", "pandas", "sklearn", "scipy", "jupyter", "nbconvert"],
     install_requires=[
+        "bayesian-optimization",
         "numpy",
         "matplotlib",
         "awkward",
