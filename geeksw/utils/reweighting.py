@@ -80,17 +80,17 @@ def reweight2d(x, y, x_ref, y_ref, x_bins, y_bins, get_w_ref=False):
     Works analogous to reweight1d and can for example be used for pt-eta reweighting.
     """
     from scipy.stats import binned_statistic_2d
-    
-    h, _, _, bin_idx = binned_statistic_2d(x, y, None, statistic='count', bins=(x_bins, y_bins))
-    h_ref, _, _, bin_idx_ref = binned_statistic_2d(x_ref, y_ref, None, statistic='count', bins=(x_bins, y_bins))
-    
-    h_w = np.zeros((len(x_bins)+1, len(y_bins)+1), dtype=np.float)
-    h_w[1:-1,1:-1] = np.divide(h_ref, h, out=np.zeros_like(h), where=h != 0)
+
+    h, _, _, bin_idx = binned_statistic_2d(x, y, None, statistic="count", bins=(x_bins, y_bins))
+    h_ref, _, _, bin_idx_ref = binned_statistic_2d(x_ref, y_ref, None, statistic="count", bins=(x_bins, y_bins))
+
+    h_w = np.zeros((len(x_bins) + 1, len(y_bins) + 1), dtype=np.float)
+    h_w[1:-1, 1:-1] = np.divide(h_ref, h, out=np.zeros_like(h), where=h != 0)
 
     h_w[np.isinf(h_w)] = 0
-    
+
     h_w = h_w.flatten()
-    
+
     w = h_w[bin_idx]
 
     if get_w_ref:

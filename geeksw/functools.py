@@ -1,5 +1,6 @@
 from functools import *
 
+
 def anymap(func, l, x):
     """ check if func(x, y) for any y in l is true
     """
