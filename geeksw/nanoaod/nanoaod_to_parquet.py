@@ -103,8 +103,8 @@ def nanoaod_to_parquet(input_files, out_dir, entrystop=None, input_prefix="", pr
         events = root_file["Events"]
 
         branches = [br.decode("ascii") for br in events.keys()]
-        
-        vector_groups_present = list(filter(lambda x : "n" + x in branches, vector_groups))
+
+        vector_groups_present = list(filter(lambda x: "n" + x in branches, vector_groups))
 
         scalar_branches = ["n" + s for s in vector_groups_present]
 
@@ -143,6 +143,8 @@ def nanoaod_to_parquet(input_files, out_dir, entrystop=None, input_prefix="", pr
             del df
 
         for b in lhe_branches:
+            if b not in events:
+                continue
             log("Loading DataFrame for " + b + " branches")
             df = extract_vector_data(events, [b], entrystop=entrystop, progressbar=progressbar)
             log("Saving DataFrame parquet " + b)

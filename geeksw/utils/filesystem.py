@@ -1,6 +1,7 @@
 import shutil
 import os
 
+
 def copy_into(source, destination):
     """ Copy all files from source into destination recursively.
 
@@ -17,3 +18,15 @@ def copy_into(source, destination):
         if not os.path.exists(dirname):
             os.makedirs(dirname)
         shutil.copy(os.path.join(source, f), os.path.join(destination, f))
+
+
+def descend(path):
+    d = os.path.expanduser(path)
+    l = os.listdir(d)
+    subdirectories = [os.path.join(d, o) for o in l if os.path.isdir(os.path.join(d, o))]
+    if len(subdirectories) == 0:
+        return path
+    if len(subdirectories) == 1:
+        return descend(subdirectories[0])
+    else:
+        raise ValueError("Can't descent unambiguously to the bottom of " + path)
