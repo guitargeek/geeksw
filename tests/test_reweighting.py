@@ -88,7 +88,7 @@ class Test(unittest.TestCase):
         tol_std = 0.5
 
         # Sample size for signal and background
-        n = 100000
+        n = 1000000
 
         # Exponential background
         bkg_x = np.random.exponential(scale=1.0, size=n)
@@ -98,27 +98,26 @@ class Test(unittest.TestCase):
         sig_y = np.random.normal(loc=2.5, scale=1.5, size=n)
 
         # Calculate weights
-        w_sig, w_bkg = reweighting.reweight2d(sig_x, sig_y, bkg_x, bkg_y, x_bins=20, y_bins=20, get_w_ref=True)
+        w_sig, w_bkg = reweighting.reweight2d(sig_x, sig_y, bkg_x, bkg_y, x_bins=100, y_bins=100, get_w_ref=True)
 
-        # Calculate reweighted histogram
-        bins = np.linspace(-2, 7, 20)
+        # Calculate reweighted histogram (x axis)
+        bins = np.linspace(0, 5, 10)
         h_sig, _ = np.histogram(sig_x, bins=bins, weights=w_sig)
         h_bkg, _ = np.histogram(bkg_x, bins=bins, weights=w_bkg)
 
-        import matplotlib.pyplot as plt
-        plt.step(range(len(h_bkg)), h_bkg)
-        plt.step(range(len(h_sig)), h_sig)
-        plt.show()
+        # check if relative differences to reference are smaller than 2 %
+        r = np.divide(h_sig - h_bkg, h_bkg, out=np.zeros_like(h_bkg), where=h_bkg != 0)
+        assert (np.abs(r) < 0.02).all()
 
-        pulls = np.divide(h_sig - h_bkg, h_bkg ** 0.5, out=np.zeros_like(h_bkg), where=h_bkg != 0)
-        mu, std = np.mean(pulls), np.std(pulls)
+        # Calculate reweighted histogram (y axis)
+        bins = np.linspace(0, 7, 10)
+        h_sig, _ = np.histogram(sig_y, bins=bins, weights=w_sig)
+        h_bkg, _ = np.histogram(bkg_y, bins=bins, weights=w_bkg)
 
-        print("")
-        print("Mean of pull distribution: {:.4f}".format(mu))
-        print("Std of pull distribution : {:.4f}".format(std))
+        # check if relative differences to reference are smaller than 2 %
+        r = np.divide(h_sig - h_bkg, h_bkg, out=np.zeros_like(h_bkg), where=h_bkg != 0)
+        assert (np.abs(r) < 0.02).all()
 
-        print("Checking if mean is withing 0.0 +/- 0.1 and std within 1.0 +/- 0.1")
-        self.assertTrue(abs(mu) < tol_mu and abs(1 - std) < tol_std)
 
 if __name__ == "__main__":
 
