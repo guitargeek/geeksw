@@ -16,11 +16,11 @@ class PairwiseLikelihoodRatioModel(object):
         # determine the number of classes
         self._n_classes = X.shape[1]
 
-        # assert that the probabilities are normalized,
-        # i.e. that the binary score matrices for each event are symmetric
-        for i in range(self._n_classes):
-            for j in range(i):
-                np.testing.assert_allclose(X[:, i, j], -X[:, j, i])
+        # # assert that the probabilities are normalized,
+        # # i.e. that the binary score matrices for each event are symmetric
+        # for i in range(self._n_classes):
+            # for j in range(i):
+                # np.testing.assert_allclose(X[:, i, j], -X[:, j, i])
 
         # create empty lists to hold the histograms and binning
         self._bins = []
@@ -80,7 +80,10 @@ class PairwiseLikelihoodRatioModel(object):
                 self._r_hist[j][i] = (hist_i / hist_j)[::-1]
 
             # the weights for each component in the calibration sample
-            self._weights = np.array([float(np.sum(y == i)) for i in range(self._n_classes)])
+            if weights is None:
+                self._weights = np.array([float(np.sum(y == i)) for i in range(self._n_classes)])
+            else:
+                self._weights = weights
             self._n_0 = np.sum(self._weights)
             self._weights /= np.sum(self._weights)
 
@@ -95,11 +98,11 @@ class PairwiseLikelihoodRatioModel(object):
         # is the numer of classes as in the training sample?
         assert self._n_classes == X.shape[1]
 
-        # assert that the probabilities are normalized,
-        # i.e. that the binary score matrices for each event are symmetric
-        for i in range(self._n_classes):
-            for j in range(i):
-                np.testing.assert_allclose(X[:, i, j], -X[:, j, i])
+        # # assert that the probabilities are normalized,
+        # # i.e. that the binary score matrices for each event are symmetric
+        # for i in range(self._n_classes):
+            # for j in range(i):
+                # np.testing.assert_allclose(X[:, i, j], -X[:, j, i])
 
         # the likelihood ratio will be initialized with ones,
         # as that's how  the diagonal should be by definition
@@ -134,7 +137,7 @@ class PairwiseLikelihoodRatioModel(object):
         n_0 = self._n_0
         w_0 = self._weights
 
-        def likelihood(mu, unsummed=False):
+        def likelihood(mu, unsummed=False, weights=None):
             w_1 = np.copy(w_0) * n_0
 
             w_1[0] *= mu
@@ -155,7 +158,10 @@ class PairwiseLikelihoodRatioModel(object):
             if unsummed:
                 return np.log(l_ratios), extended
 
-            return np.sum(np.log(l_ratios)) + extended
+            if weights is None:
+                return np.sum(np.log(l_ratios)) + extended
+            else:
+                return np.sum(np.log(l_ratios) * weights) + extended
 
         return likelihood
 
