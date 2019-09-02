@@ -81,8 +81,8 @@ def reweight2d(x, y, x_ref, y_ref, x_bins, y_bins, get_w_ref=False):
     """
     from scipy.stats import binned_statistic_2d
 
+    h_ref, x_bins, y_bins, bin_idx_ref = binned_statistic_2d(x_ref, y_ref, None, statistic="count", bins=(x_bins, y_bins))
     h, _, _, bin_idx = binned_statistic_2d(x, y, None, statistic="count", bins=(x_bins, y_bins))
-    h_ref, _, _, bin_idx_ref = binned_statistic_2d(x_ref, y_ref, None, statistic="count", bins=(x_bins, y_bins))
 
     h_w = np.zeros((len(x_bins) + 1, len(y_bins) + 1), dtype=np.float)
     h_w[1:-1, 1:-1] = np.divide(h_ref, h, out=np.zeros_like(h), where=h != 0)

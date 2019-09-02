@@ -79,6 +79,46 @@ class Test(unittest.TestCase):
         print("Checking if mean is withing 0.0 +/- 0.1 and std within 1.0 +/- 0.1")
         self.assertTrue(abs(mu) < tol_mu and abs(1 - std) < tol_std)
 
+    def test_reweight2d_to_ref_dist(self):
+        """Test the 2d reweighting to a reference distribution.
+        """
+
+        # The tolerance of the test
+        tol_mu = 0.1
+        tol_std = 0.5
+
+        # Sample size for signal and background
+        n = 100000
+
+        # Exponential background
+        bkg_x = np.random.exponential(scale=1.0, size=n)
+        bkg_y = np.random.exponential(scale=1.1, size=n)
+        # Gaussian signal
+        sig_x = np.random.normal(loc=2.0, scale=1.0, size=n)
+        sig_y = np.random.normal(loc=2.5, scale=1.5, size=n)
+
+        # Calculate weights
+        w_sig, w_bkg = reweighting.reweight2d(sig_x, sig_y, bkg_x, bkg_y, x_bins=20, y_bins=20, get_w_ref=True)
+
+        # Calculate reweighted histogram
+        bins = np.linspace(-2, 7, 20)
+        h_sig, _ = np.histogram(sig_x, bins=bins, weights=w_sig)
+        h_bkg, _ = np.histogram(bkg_x, bins=bins, weights=w_bkg)
+
+        import matplotlib.pyplot as plt
+        plt.step(range(len(h_bkg)), h_bkg)
+        plt.step(range(len(h_sig)), h_sig)
+        plt.show()
+
+        pulls = np.divide(h_sig - h_bkg, h_bkg ** 0.5, out=np.zeros_like(h_bkg), where=h_bkg != 0)
+        mu, std = np.mean(pulls), np.std(pulls)
+
+        print("")
+        print("Mean of pull distribution: {:.4f}".format(mu))
+        print("Std of pull distribution : {:.4f}".format(std))
+
+        print("Checking if mean is withing 0.0 +/- 0.1 and std within 1.0 +/- 0.1")
+        self.assertTrue(abs(mu) < tol_mu and abs(1 - std) < tol_std)
 
 if __name__ == "__main__":
 
