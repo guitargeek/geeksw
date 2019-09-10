@@ -20,6 +20,18 @@ def expand_dataset_info(path):
     return DatasetFileInfo(path, sorted(list(root_basenames)), sorted(list(data_frames)), suffix)
 
 
+def is_first_in_event(event):
+    return numpy.concatenate([[1], event[1:] != event[:-1]])
+
+
+def indices_in_event(event):
+    r = numpy.arange(len(event))
+    t = is_first_in_event(event) * r
+    w = numpy.where(t)[0]
+    t[w[1:]] -= t[w[:-1]]
+    return r - numpy.cumsum(t)
+
+
 class ParquetSingleFileHandler(object):
 
     import pandas
@@ -41,7 +53,12 @@ class ParquetSingleFileHandler(object):
         if not key in self:
             raise ValueError("Dataset does not contain data frame named " + key + ".")
         df = pandas.read_parquet(self._file_template.format(key))
-        return df.set_index("event")
+        if key == "Scalar":
+            df = df.set_index("event")
+        else:
+            df[key] = indices_in_event(df["event"].values)
+            df = df.set_index(["event", key])
+        return df
 
 
 class ParquetFilesHandler(object):
