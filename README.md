@@ -15,6 +15,13 @@ The following sections will give an overview on the features of geeksw. It is ta
 
 ## Installation
 
+You should use Python 3 with geeksw, so if you are on `llruicm01` please consider putting this into your `.bashrc`:
+
+```
+alias python="/opt/exp_soft/llr/python/3.7.0/el7/bin/python"
+alias pip="/opt/exp_soft/llr/python/3.7.0/el7/bin/pip3"
+```
+
 The geeksw framework can be installed like any other python package:
 ```
 git clone git@github.com:guitargeek/geeksw.git
