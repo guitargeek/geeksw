@@ -5,10 +5,11 @@ from . import utils
 import pandas
 import numpy
 
+
 def foo(data):
 
-    df_ele = variables.leptons.triboson_us_selection(data["Electron"], "veto", pt_threshold=10.)
-    df_muon = variables.leptons.triboson_us_selection(data["Muon"], "veto", pt_threshold=10.)
+    df_ele = variables.leptons.triboson_us_selection(data["Electron"], "veto", pt_threshold=10.0)
+    df_muon = variables.leptons.triboson_us_selection(data["Muon"], "veto", pt_threshold=10.0)
     df_scalar = data["Scalar"]
     df_jet = data["Jet"]
 
@@ -16,7 +17,7 @@ def foo(data):
     df_muon["Muon_PuppiMT"] = variables.leptons.transverse_mass_with_met(df_muon, df_scalar)
 
     def triboson_us_pair_selection(df_ele, df_muon):
-        
+
         # get all pairs
         df_ele_pairs = variables.leptons.invariant_mass_pairs(df_ele)
         df_muon_pairs = variables.leptons.invariant_mass_pairs(df_muon)
@@ -41,7 +42,7 @@ def foo(data):
         df_remaining = cmspandas.unselect_objects(df_remaining, df_lepton_pairs["Anti" + particle])
         return variables.leptons.triboson_us_selection(df_remaining, "nominal")
 
-    def count_leptons_over_mt(df_lep, threshold=20.):
+    def count_leptons_over_mt(df_lep, threshold=20.0):
         particle = df_lep.columns[0].split("_")[0]
         index = cmspandas.unique_events(df_lep)
         v = utils.to_jagged(df_lep[particle + "_PuppiMT"] > threshold).sum()
@@ -96,8 +97,8 @@ def foo(data):
     df_analysis["W_Leptons_charge_sum"] = df_analysis["W_Electron_charge_sum"] + df_analysis["W_Muon_charge_sum"]
     df_analysis["W_Leptons_pass_pt"] = df_analysis["W_Electron_pass_pt"] + df_analysis["W_Muon_pass_pt"]
 
-    df_analysis["W_Leptons_over_Mt_20"] = count_leptons_over_mt(df_W_ele, 20.) + count_leptons_over_mt(df_W_muon, 40.)
-    df_analysis["W_Leptons_over_Mt_40"] = count_leptons_over_mt(df_W_ele, 40.) + count_leptons_over_mt(df_W_muon, 40.)
+    df_analysis["W_Leptons_over_Mt_20"] = count_leptons_over_mt(df_W_ele, 20.0) + count_leptons_over_mt(df_W_muon, 40.0)
+    df_analysis["W_Leptons_over_Mt_40"] = count_leptons_over_mt(df_W_ele, 40.0) + count_leptons_over_mt(df_W_muon, 40.0)
     df_analysis["W_Leptons_over_Mt_20"] = df_analysis["W_Leptons_over_Mt_20"].fillna(0).astype(int)
     df_analysis["W_Leptons_over_Mt_40"] = df_analysis["W_Leptons_over_Mt_40"].fillna(0).astype(int)
 
@@ -113,40 +114,43 @@ def foo(data):
     df_analysis = df_analysis.query("W_Leptons_pass_pt >= 1")
 
     def is_e_mu_SR(df):
-        return numpy.logical_and.reduce([
-                           df["n_W_electron"] == 1,
-                           df["nBjets"] == 0,
-                           df["W_Leptons_over_Mt_40"] >= 1,
-                           df["W_Leptons_over_Mt_20"] == 2,
-                          ])
+        return numpy.logical_and.reduce(
+            [
+                df["n_W_electron"] == 1,
+                df["nBjets"] == 0,
+                df["W_Leptons_over_Mt_40"] >= 1,
+                df["W_Leptons_over_Mt_20"] == 2,
+            ]
+        )
 
     def is_btag_CR(df):
-        return numpy.logical_and.reduce([
-                           df["n_W_electron"] == 1,
-                           df["nBjets"] > 0,
-                          ])
+        return numpy.logical_and.reduce([df["n_W_electron"] == 1, df["nBjets"] > 0])
 
     def is_on_Z_CR(df):
-        return numpy.logical_and.reduce([
-                           numpy.abs(df["n_W_electron"] - df["n_W_muon"]) == 2,
-                           df["nBjets"] == 0,
-                           numpy.abs(df["second_Z_candidate"] - 91.19) <= 10.,
-                          ])
+        return numpy.logical_and.reduce(
+            [
+                numpy.abs(df["n_W_electron"] - df["n_W_muon"]) == 2,
+                df["nBjets"] == 0,
+                numpy.abs(df["second_Z_candidate"] - 91.19) <= 10.0,
+            ]
+        )
 
     def is_off_Z_SR(df):
-        return numpy.logical_and.reduce([
-                           df["n_W_electron"] + df["n_W_muon"] == 2,
-                           numpy.abs(df["n_W_electron"] - df["n_W_muon"]) == 2,
-                           df["nBjets"] == 0,
-                           ~(numpy.abs(df["second_Z_candidate"] - 91.19) <= 10.),
-                           df["MET"] >= 100.,
-                          ])
+        return numpy.logical_and.reduce(
+            [
+                df["n_W_electron"] + df["n_W_muon"] == 2,
+                numpy.abs(df["n_W_electron"] - df["n_W_muon"]) == 2,
+                df["nBjets"] == 0,
+                ~(numpy.abs(df["second_Z_candidate"] - 91.19) <= 10.0),
+                df["MET"] >= 100.0,
+            ]
+        )
 
-    xsec = 0.35 * 1000
-    lumi = 137. # for run 2 approximately
-
-    return pandas.DataFrame({"e_mu_SR" : [numpy.sum(is_e_mu_SR(df_analysis)) * xsec * lumi / n],
-        "b_tag_CR" : [numpy.sum(is_btag_CR(df_analysis)) * xsec * lumi / n],
-        "on_Z_CR" : [numpy.sum(is_on_Z_CR(df_analysis)) * xsec * lumi / n],
-        "off_Z_CR" : [numpy.sum(is_off_Z_SR(df_analysis)) * xsec * lumi / n]}
+    return pandas.DataFrame(
+        {
+            "e_mu_SR": [numpy.sum(is_e_mu_SR(df_analysis))],
+            "b_tag_CR": [numpy.sum(is_btag_CR(df_analysis))],
+            "on_Z_CR": [numpy.sum(is_on_Z_CR(df_analysis))],
+            "off_Z_SR": [numpy.sum(is_off_Z_SR(df_analysis))],
+        }
     )

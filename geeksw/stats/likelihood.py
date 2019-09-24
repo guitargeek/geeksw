@@ -19,8 +19,8 @@ class PairwiseLikelihoodRatioModel(object):
         # # assert that the probabilities are normalized,
         # # i.e. that the binary score matrices for each event are symmetric
         # for i in range(self._n_classes):
-            # for j in range(i):
-                # np.testing.assert_allclose(X[:, i, j], -X[:, j, i])
+        # for j in range(i):
+        # np.testing.assert_allclose(X[:, i, j], -X[:, j, i])
 
         # create empty lists to hold the histograms and binning
         self._bins = []
@@ -101,8 +101,8 @@ class PairwiseLikelihoodRatioModel(object):
         # # assert that the probabilities are normalized,
         # # i.e. that the binary score matrices for each event are symmetric
         # for i in range(self._n_classes):
-            # for j in range(i):
-                # np.testing.assert_allclose(X[:, i, j], -X[:, j, i])
+        # for j in range(i):
+        # np.testing.assert_allclose(X[:, i, j], -X[:, j, i])
 
         # the likelihood ratio will be initialized with ones,
         # as that's how  the diagonal should be by definition
