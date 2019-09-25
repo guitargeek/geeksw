@@ -19,7 +19,7 @@ def count(arr):
     return series
 
 
-def to_lorentz_vector_array(df, counts=None):
+def lorentz_vector_array(df, counts=None):
     if counts is None:
         counts = count(df)
     particle = df.columns[0].split("_")[0]

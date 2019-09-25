@@ -57,6 +57,7 @@ class ParquetSingleFileHandler(object):
             df = df.set_index("event")
         else:
             df[key] = indices_in_event(df["event"].values)
+            df["event"] = df["event"].astype(int)
             df = df.set_index(["event", key])
         return df
 

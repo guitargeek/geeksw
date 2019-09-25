@@ -60,9 +60,9 @@ def btag(df, tagger, working_point, year):
     return df[tagger["col_name"]] > tagger["working_points"][working_point]
 
 
-def n_bjets(df, tagger, working_point, pt_threshold=20.0, max_eta=2.4):
+def n_bjets(df, tagger, working_point, year, pt_threshold=20.0, max_eta=2.4):
 
-    b_tagged = btag(df, tagger, working_point).values
+    b_tagged = btag(df, tagger, working_point, year).values
 
     is_b_jet = numpy.logical_and.reduce(
         [b_tagged, df["Jet_pt"].values >= pt_threshold, numpy.abs(df["Jet_eta"]) < max_eta]

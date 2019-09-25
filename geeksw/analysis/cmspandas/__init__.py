@@ -61,9 +61,7 @@ def count_if(df, query):
     return series
 
 
-def array(series, auto_flatten=False):
+def array(series):
     counts = utils.count(series)
     a = awkward.JaggedArray.fromcounts(counts, series)
-    if not auto_flatten or (counts != 1).any():
-        return a
-    return a.flatten()
+    return a

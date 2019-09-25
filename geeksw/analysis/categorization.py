@@ -1,17 +1,21 @@
 from . import variables
 from . import cmspandas
 from . import utils
+from .. import physics
 
 import pandas
 import numpy
 
 
-def foo(data):
+def foo(data, year):
 
     df_ele = variables.leptons.triboson_us_selection(data["Electron"], "veto", pt_threshold=10.0)
     df_muon = variables.leptons.triboson_us_selection(data["Muon"], "veto", pt_threshold=10.0)
     df_scalar = data["Scalar"]
     df_jet = data["Jet"]
+
+    df_jet = physics.crossclean(df_jet, df_ele)
+    df_jet = physics.crossclean(df_jet, df_muon)
 
     df_ele["Electron_PuppiMT"] = variables.leptons.transverse_mass_with_met(df_ele, df_scalar)
     df_muon["Muon_PuppiMT"] = variables.leptons.transverse_mass_with_met(df_muon, df_scalar)
@@ -63,7 +67,7 @@ def foo(data):
     df_analysis.loc[df_W_ele_pairs.index, "second_Z_candidate"] = df_W_ele_pairs["Electron_pair_mass"]
     df_analysis.loc[df_W_muon_pairs.index, "second_Z_candidate"] = df_W_muon_pairs["Muon_pair_mass"]
 
-    n_bjets = variables.jet.n_bjets(df_jet, "DeepCSV", "loose", pt_threshold=20.0)
+    n_bjets = variables.jet.n_bjets(df_jet, "DeepCSV", "loose", year, pt_threshold=20.0)
 
     df_analysis.loc[n_bjets.index, "nBjets"] = n_bjets
 
@@ -118,8 +122,8 @@ def foo(data):
             [
                 df["n_W_electron"] == 1,
                 df["nBjets"] == 0,
-                df["W_Leptons_over_Mt_40"] >= 1,
-                df["W_Leptons_over_Mt_20"] == 2,
+                # df["W_Leptons_over_Mt_40"] >= 1,
+                # df["W_Leptons_over_Mt_20"] == 2,
             ]
         )
 
@@ -142,7 +146,7 @@ def foo(data):
                 numpy.abs(df["n_W_electron"] - df["n_W_muon"]) == 2,
                 df["nBjets"] == 0,
                 ~(numpy.abs(df["second_Z_candidate"] - 91.19) <= 10.0),
-                df["MET"] >= 100.0,
+                # df["MET"] >= 100.0,
             ]
         )
 

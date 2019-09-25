@@ -55,8 +55,8 @@ def invariant_mass_pairs(df):
     particle_counts = jagged_arr.sum()
     anti_particle_counts = counts - particle_counts
 
-    particles = utils.to_lorentz_vector_array(df_particles, counts=particle_counts)
-    anti_particles = utils.to_lorentz_vector_array(df_anti_particles, counts=anti_particle_counts)
+    particles = utils.lorentz_vector_array(df_particles, counts=particle_counts)
+    anti_particles = utils.lorentz_vector_array(df_anti_particles, counts=anti_particle_counts)
 
     combinations = particles.cross(anti_particles, nested=False)
     pair_masses = (combinations.i0 + combinations.i1).mass
@@ -189,7 +189,7 @@ def transverse_mass_with_met(df_lepton, df_scalar, met="PuppiMET"):
 
     df_scalar_selected = df_scalar.loc[cmspandas.unique_events(df_lepton)]
 
-    leptons = utils.to_lorentz_vector_array(df_lepton)
+    leptons = utils.lorentz_vector_array(df_lepton)
 
     met = uproot_methods.TLorentzVectorArray.from_ptetaphim(
         df_scalar_selected[met + "_pt"], 0.0, df_scalar_selected[met + "_phi"], 0
