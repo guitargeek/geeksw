@@ -1,9 +1,20 @@
 variables:
+    PIP: pip3.6
     PYTHON: python3.6
 
 before_script:
   - yum install -y python36 python36-scipy python36-numpy python36-pandas python36-setuptools python36-pip
 
-unit-tests:
+pip-install:
+    stage: install
     script:
-     - $PYTHON setup.py pytest
+      - $PIP install .
+
+pytest:
+    stage: test
+    script:
+      - $PYTHON setup.py pytest
+
+stages:
+  - install
+  - test
