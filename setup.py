@@ -22,7 +22,6 @@ setup(
         "awkward",
         "h5py",
         "uproot",
-        "futures",
         "uproot-methods",
         "torch",
         "lockfile",
