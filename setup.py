@@ -23,7 +23,6 @@ setup(
         "h5py",
         "uproot",
         "uproot-methods",
-        "torch",
         "lockfile",
         "tables",
         "tqdm",
