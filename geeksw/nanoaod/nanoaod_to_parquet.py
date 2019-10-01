@@ -122,10 +122,7 @@ from geeksw.nanocache import list_files
 import os
 import subprocess
 
-
-def convert_dataset_to_parquet(dataset, base_out_dir=".", server="root://polgrid4.in2p3.fr/"):
-
-    input_files = list_files(dataset)
+def convert_files_to_parquet(input_files, base_out_dir=".", server="root://polgrid4.in2p3.fr/"):
 
     n = len(input_files)
 
@@ -139,9 +136,20 @@ def convert_dataset_to_parquet(dataset, base_out_dir=".", server="root://polgrid
             subprocess.call(["rm", tmp_file_name])
 
         print(f"File {i+1} of {n}: copying " + input_file + " to " + tmp_file_name)
-        subprocess.call(["xrdcp", server + input_file, tmp_file_name])
+        try:
+            print("getting xrdcp path from environment")
+            xrdcp = os.getenv("XRDCP")
+        except:
+            xrdcp = "xrdcp"
+        subprocess.call([xrdcp, server + input_file, tmp_file_name])
 
         nanoaod_to_parquet([tmp_file_name], out_dir, entrystop=None, progressbar=False)
 
         subprocess.call(["rm", tmp_file_name])
         print("Deleted " + tmp_file_name)
+
+def convert_dataset_to_parquet(dataset, base_out_dir=".", server="root://polgrid4.in2p3.fr/"):
+
+    input_files = list_files(dataset)
+
+    convert_files_to_parquet(input_files, base_out_dir=base_out_dir, server=server)
