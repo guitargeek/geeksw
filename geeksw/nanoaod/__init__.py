@@ -1,1 +1,1 @@
-from .nanoaod_to_parquet import nanoaod_to_parquet
+from .nanoaod_to_parquet import nanoaod_to_parquet, convert_dataset_to_parquet
