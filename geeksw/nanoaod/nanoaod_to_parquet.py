@@ -5,30 +5,6 @@ import numpy as np
 import awkward
 from tqdm import tqdm
 
-vector_groups = [
-    "Electron",
-    "Jet",
-    "Tau",
-    "Photon",
-    "Muon",
-    "IsoTrack",
-    "GenVisTau",
-    "SV",
-    "GenJet",
-    "GenJetAK8",
-    "OtherPV",
-    "SubJet",
-    "TrigObj",
-    "SoftActivityJet",
-    "LHEPart",
-    "FatJet",
-    "GenPart",
-    "SubGenJetAK8",
-    "GenDressedLepton",
-]
-
-lhe_branches = ["LHEPdfWeight", "LHEScaleWeight"]
-
 
 def extract_scalar_data(events, branches, entrystop=None, progressbar=False):
     data = {}
@@ -104,27 +80,19 @@ def nanoaod_to_parquet(input_files, out_dir, entrystop=None, input_prefix="", pr
 
         branches = [br.decode("ascii") for br in events.keys()]
 
-        vector_groups_present = list(filter(lambda x: "n" + x in branches, vector_groups))
+        n_events = len(events[branches[0]])
+
+        prefixes = list(set([b.split("_")[0] for b in branches]))
+
+        vector_groups_present = [p for p in prefixes if "n" + p in events]
 
         scalar_branches = ["n" + s for s in vector_groups_present]
 
         for br in branches:
             if br == "event":
                 continue
-
-            if br in lhe_branches:
-                continue
-
-            veto = False
-            for s in vector_groups_present:
-                if br.startswith(s + "_"):
-                    veto = True
-                    break
-
-            if veto:
-                continue
-
-            scalar_branches.append(br)
+            if not br.split("_")[0] in vector_groups_present:
+                scalar_branches.append(br)
 
         basename = os.path.basename(input_file)[:-5]
 
@@ -134,19 +102,16 @@ def nanoaod_to_parquet(input_files, out_dir, entrystop=None, input_prefix="", pr
         save_parquet(df_scalar, basename + "_Scalar")
         del df_scalar
 
+        processed_branches = scalar_branches + ["event"]
+
         for group in vector_groups_present:
             log("Loading DataFrame for object group " + group)
-            filtered_branches = list(filter(lambda br: br.startswith(group + "_"), branches))
+            filtered_branches = list(filter(lambda br: br == group or br.startswith(group + "_"), branches))
             df = extract_vector_data(events, filtered_branches, entrystop=entrystop, progressbar=progressbar)
             log("Saving DataFrame parquet " + group)
             save_parquet(df, basename + "_" + group)
+            processed_branches += filtered_branches
             del df
 
-        for b in lhe_branches:
-            if b not in events:
-                continue
-            log("Loading DataFrame for " + b + " branches")
-            df = extract_vector_data(events, [b], entrystop=entrystop, progressbar=progressbar)
-            log("Saving DataFrame parquet " + b)
-            save_parquet(df, basename + "_" + b)
-            del df
+        # make sure we considered all the branches
+        assert [b for b in branches if not b in processed_branches] == []

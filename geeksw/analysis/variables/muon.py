@@ -13,14 +13,13 @@ def very_loose_id(df):
         np.logical_and.reduce(
             [
                 df["Muon_mediumId"],
-                df["Muon_pt"] > 10.,
+                df["Muon_pt"] > 10.0,
                 df["Muon_eta"].abs() < 2.4,
                 df["Muon_dz"].abs() < 0.1 + is_ee * 0.1,
                 df["Muon_dxy"].abs() < 0.05 + is_ee * 0.05,
             ]
         )
     ]
-
 
 
 def isLooseMuonPOG(mus):

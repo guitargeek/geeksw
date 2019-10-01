@@ -102,7 +102,7 @@ def very_loose_id(df):
     return df[
         np.logical_and.reduce(
             [
-                df["Electron_pt"] > 10.,
+                df["Electron_pt"] > 10.0,
                 pass_cut_based_id(df, "veto"),
                 df["Electron_eta"].abs() < 2.5,
                 df["Electron_dz"].abs() < 0.1 + is_ee * 0.1,
