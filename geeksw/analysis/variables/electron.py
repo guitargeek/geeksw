@@ -90,37 +90,23 @@ def is_endcap(df):
     [1] https://github.com/cms-sw/cmssw/blob/CMSSW_10_2_X/RecoEgamma/ElectronIdentification/python/Identification/cutBasedElectronID_tools.py#L5
 
     """
-    return np.abs(supercluster_eta(df)) >= 1.479
+    return np.abs(supercluster_eta(df)) > 1.479
 
 
-def triboson_us_selection(df, working_point, pt_threshold=10.0):
-    # from https://indico.cern.ch/event/769246/contributions/3494885/attachments/1877118/3091417/PhilipChang20190709_SMPVV_WVZ4or5Lep_MBA.pdf
-    working_points = ["veto", "nominal"]
+def very_loose_id(df):
 
-    if not working_point in working_points:
-        raise ValueError('working_point has to be any of "' + '", "'.join(working_points) + '".')
-
-    pog_working_point = "medium" if working_point == "nominal" else "veto"
+    # adapted from wvzBabyMaker::isPt10VeryLooserThanPOGVetoElectron(int idx)
 
     is_ee = is_endcap(df)
-
-    dz_cut = 0.1 + is_ee * 0.1  # 0.1 in EB, 0.2 in EE
-    pass_dz = df["Electron_dz"].abs() < dz_cut
-
-    dxy_cut = 0.05 + is_ee * 0.05  # 0.05 in EB, 0.1 in EE
-    pass_dxy = df["Electron_dxy"].abs() < dxy_cut
-
-    pass_sip3d = df["Electron_sip3d"].abs() < 4.0
 
     return df[
         np.logical_and.reduce(
             [
-                pass_cut_based_id(df, pog_working_point),
+                df["Electron_pt"] > 10.,
+                pass_cut_based_id(df, "veto"),
                 df["Electron_eta"].abs() < 2.5,
-                df["Electron_pt"] > pt_threshold,
-                pass_dz,
-                pass_dxy,
-                pass_sip3d,
+                df["Electron_dz"].abs() < 0.1 + is_ee * 0.1,
+                df["Electron_dxy"].abs() < 0.05 + is_ee * 0.05,
             ]
         )
     ]

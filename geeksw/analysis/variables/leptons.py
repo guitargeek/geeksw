@@ -3,7 +3,6 @@ import pandas
 import awkward
 import uproot_methods
 
-from .. import utils
 from .. import physics
 from .. import cmspandas
 
@@ -172,17 +171,6 @@ def crossclean_pairs(df_electron_pairs, df_muon_pairs, z_boson_mass=91.19):
     df.loc[mask_ele, "Electron"] = numpy.nan
 
     return df_electron_pairs.drop(df["Electron"].dropna().index), df_muon_pairs.drop(df["Muon"].dropna().index)
-
-
-def triboson_us_selection(df, working_point, pt_threshold=10.0):
-    particle = df.columns[0].split("_")[0]
-
-    if particle == "Electron":
-        return electron.triboson_us_selection(df, working_point, pt_threshold)
-    if particle == "Muon":
-        return muon.triboson_us_selection(df, working_point, pt_threshold)
-
-    raise ValueError("Can only select from electron or muon DataFrame.")
 
 
 def transverse_mass_with_met(df_lepton, df_scalar, met="PuppiMET"):

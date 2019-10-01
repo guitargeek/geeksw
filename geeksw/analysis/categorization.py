@@ -1,6 +1,5 @@
 from . import variables
 from . import cmspandas
-from . import utils
 from .. import physics
 
 import pandas

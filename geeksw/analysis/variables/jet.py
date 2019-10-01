@@ -2,7 +2,7 @@ import numpy
 import pandas
 import awkward
 
-from .. import utils
+from .. import cmspandas
 
 
 def identification(df, working_point):
