@@ -90,4 +90,61 @@ def cmstext(s, loc=0):
         return text(x0 + (x1 - x0) * 0, y0 + (y1 - y0) * 1.025, s1, fontweight="bold", fontsize=22)
 
 
+def cms_hist(values, bins, weights=None, plot_uncertainty=True, style="mc", color="b", fill=True, **kwargs):
+
+    if not weights is None:
+        counts = np.histogram(values, bins=bins)[0]
+        events = np.histogram(values, weights=weights, bins=bins)[0]
+        errors = events * 1.0 / np.sqrt(counts)
+    else:
+        events = np.histogram(values, bins=bins)[0]
+        errors = events * 1.0 / np.sqrt(events)
+
+    if style == "mc":
+        x = np.vstack([bins, bins]).T.flatten()
+
+        def to_y(events):
+            return np.concatenate([[0.0], np.vstack([events, events]).T.flatten(), [0.0]])
+
+        if fill:
+            fill_between(x, 0.0, to_y(events), facecolor=color, edgecolor="k", linewidth=1.0, **kwargs)
+        else:
+            plot(x, to_y(events), color="k" if fill else color, linewidth=2.0, **kwargs)
+
+        if plot_uncertainty:
+            fill_between(
+                x,
+                to_y(events - errors),
+                to_y(events + errors),
+                hatch="\\\\\\\\\\",
+                facecolor="none",
+                edgecolor="k",
+                linewidth=0.0,
+                alpha=0.5,
+            )
+    if style == "data":
+        bin_centers = (bins[1:] + bins[:-1]) / 2.0
+        if plot_uncertainty:
+            errorbar(bin_centers, events, yerr=errors, color="k", fmt="o", **kwargs)
+        else:
+            scatter(bin_centers, events, color="k", **kwargs)
+
+
+def finalize(bins, xlabel=None, ylabel="Events"):
+    xlim(bins[0], bins[-1])
+    ylim(0, ylim()[-1])
+    ylabel("Events")
+
+    cmstext("CMS Simulation", loc=2)
+    lumitext("137 $fb^{-1}$ (13 TeV)")
+
+    if xlabel:
+        xlabel(xlabel)
+
+    if ylabel:
+        yabel(ylabel)
+
+    legend()
+
+
 _initialize()
