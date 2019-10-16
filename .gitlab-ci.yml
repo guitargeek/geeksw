@@ -1,16 +1,15 @@
 variables:
-    PIP: pip3.6
     PYTHON: python3.6
 
 before_script:
   - yum install -y python36 python36-scipy python36-numpy python36-pandas python36-setuptools python36-pip
-  - $PIP install --upgrade pip
-  - $PIP install torch
+  - $PYTHON -m pip install --upgrade pip
+  - $PYTHON -m pip install torch
 
 pip-install:
     stage: install
     script:
-      - $PIP install .
+      - $PYTHON -m pip install .
 
 pytest:
     stage: test
