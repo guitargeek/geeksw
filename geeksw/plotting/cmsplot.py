@@ -90,15 +90,23 @@ def cmstext(s, loc=0):
         return text(x0 + (x1 - x0) * 0, y0 + (y1 - y0) * 1.025, s1, fontweight="bold", fontsize=22)
 
 
-def cms_hist(values, bins, weights=None, plot_uncertainty=True, style="mc", color="b", fill=True, **kwargs):
+def cms_hist(values, bins, weights=None, plot_uncertainty=True, style="mc", color=None, fill=True, baseline_events=None,
+        baseline_errors2=None, **kwargs):
 
     if not weights is None:
         counts = np.histogram(values, bins=bins)[0]
         events = np.histogram(values, weights=weights, bins=bins)[0]
-        errors = events * 1.0 / np.sqrt(counts)
+        errors2 = events **2 / counts
     else:
         events = np.histogram(values, bins=bins)[0]
-        errors = events * 1.0 / np.sqrt(events)
+        errors2 = events **2 / events
+
+    if not baseline_events is None:
+        events = events + baseline_events
+    if not baseline_errors2 is None:
+        errors2 = errors2 + baseline_errors2
+
+    errors = np.sqrt(errors2)
 
     if style == "mc":
         x = np.vstack([bins, bins]).T.flatten()
@@ -107,7 +115,8 @@ def cms_hist(values, bins, weights=None, plot_uncertainty=True, style="mc", colo
             return np.concatenate([[0.0], np.vstack([events, events]).T.flatten(), [0.0]])
 
         if fill:
-            fill_between(x, 0.0, to_y(events), facecolor=color, edgecolor="k", linewidth=1.0, **kwargs)
+            y_low = 0.0 if baseline_events is None else to_y(baseline_events)
+            fill_between(x, y_low, to_y(events), facecolor=color, edgecolor="k", linewidth=1.0, **kwargs)
         else:
             plot(x, to_y(events), color="k" if fill else color, linewidth=2.0, **kwargs)
 
@@ -129,22 +138,25 @@ def cms_hist(values, bins, weights=None, plot_uncertainty=True, style="mc", colo
         else:
             scatter(bin_centers, events, color="k", **kwargs)
 
+    return events, errors2
 
-def finalize(bins, xlabel=None, ylabel="Events"):
+set_xlabel = xlabel
+set_ylabel = ylabel
+
+def finalize(bins, xlabel=None, ylabel="Events", n_legend_cols=1):
     xlim(bins[0], bins[-1])
     ylim(0, ylim()[-1])
-    ylabel("Events")
 
     cmstext("CMS Simulation", loc=2)
     lumitext("137 $fb^{-1}$ (13 TeV)")
 
     if xlabel:
-        xlabel(xlabel)
+        set_xlabel(xlabel)
 
     if ylabel:
-        yabel(ylabel)
+        set_ylabel(ylabel)
 
-    legend()
+    legend(ncol=n_legend_cols)
 
 
 _initialize()
