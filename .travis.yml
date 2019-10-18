@@ -21,4 +21,5 @@ addons:
       - nodejs
 
 script:
+  python -m pip install torch
   python setup.py pytest
