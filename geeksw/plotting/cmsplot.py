@@ -90,16 +90,26 @@ def cmstext(s, loc=0):
         return text(x0 + (x1 - x0) * 0, y0 + (y1 - y0) * 1.025, s1, fontweight="bold", fontsize=22)
 
 
-def cms_hist(values, bins, weights=None, plot_uncertainty=True, style="mc", color=None, fill=True, baseline_events=None,
-        baseline_errors2=None, **kwargs):
+def cms_hist(
+    values,
+    bins,
+    weights=None,
+    plot_uncertainty=True,
+    style="mc",
+    color=None,
+    fill=True,
+    baseline_events=None,
+    baseline_errors2=None,
+    **kwargs
+):
 
     if not weights is None:
         counts = np.histogram(values, bins=bins)[0]
         events = np.histogram(values, weights=weights, bins=bins)[0]
-        errors2 = events **2 / counts
+        errors2 = np.divide(events ** 2, counts, out=np.zeros_like(events), where=counts != 0)
     else:
         events = np.histogram(values, bins=bins)[0]
-        errors2 = events **2 / events
+        errors2 = events
 
     if not baseline_events is None:
         events = events + baseline_events
@@ -133,15 +143,21 @@ def cms_hist(values, bins, weights=None, plot_uncertainty=True, style="mc", colo
             )
     if style == "data":
         bin_centers = (bins[1:] + bins[:-1]) / 2.0
+        y = np.array(events, dtype=np.float)
+        yerr = errors
+        yerr[y == 0] = np.nan
+        y[y == 0] = np.nan
         if plot_uncertainty:
-            errorbar(bin_centers, events, yerr=errors, color="k", fmt="o", **kwargs)
+            errorbar(bin_centers, y, yerr=yerr, color="k", fmt="o", **kwargs)
         else:
-            scatter(bin_centers, events, color="k", **kwargs)
+            scatter(bin_centers, y, color="k", **kwargs)
 
     return events, errors2
 
+
 set_xlabel = xlabel
 set_ylabel = ylabel
+
 
 def finalize(bins, xlabel=None, ylabel="Events", n_legend_cols=1):
     xlim(bins[0], bins[-1])
@@ -156,7 +172,8 @@ def finalize(bins, xlabel=None, ylabel="Events", n_legend_cols=1):
     if ylabel:
         set_ylabel(ylabel)
 
-    legend(ncol=n_legend_cols)
+    if n_legend_cols > 0:
+        legend(ncol=n_legend_cols)
 
 
 _initialize()
