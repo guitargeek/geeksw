@@ -122,6 +122,7 @@ from geeksw.nanocache import list_files
 import os
 import subprocess
 
+
 def convert_files_to_parquet(input_files, base_out_dir=".", server="root://polgrid4.in2p3.fr/"):
 
     n = len(input_files)
@@ -142,6 +143,7 @@ def convert_files_to_parquet(input_files, base_out_dir=".", server="root://polgr
 
         subprocess.call(["rm", tmp_file_name])
         print("Deleted " + tmp_file_name)
+
 
 def convert_dataset_to_parquet(dataset, base_out_dir=".", server="root://polgrid4.in2p3.fr/"):
 
