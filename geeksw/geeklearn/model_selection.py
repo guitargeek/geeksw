@@ -77,7 +77,7 @@ class BayesianOptimizationCV:
             f=target, pbounds=self._param_boundaries, random_state=self._random_state, verbose=self._verbose
         )
 
-        optimizer.maximize(init_points=self._init_points, n_iter=self._n_iter)
+        optimizer.maximize(init_points=self._init_points, n_iter=self._n_iter, acq="ei")
 
         for i, d in enumerate(optimizer.res):
 

@@ -153,7 +153,7 @@ class RectangularBinningModel(object):
             mask = np.logical_and.reduce([X[:, 0] >= xlim[0], X[:, 0] < xlim[1], X[:, 1] >= ylim[0], X[:, 1] < ylim[1]])
 
             # if (out[mask] != -1).any():
-                # raise ValueError("The boxes are overlapping!")
+            # raise ValueError("The boxes are overlapping!")
             out[mask] = i_box
 
         if self.snapped_ and (out[mask] == -1).any():

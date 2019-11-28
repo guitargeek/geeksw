@@ -26,6 +26,5 @@ setup(
         "lockfile",
         "tables",
         "tqdm",
-        "pyarrow",
     ],
 )
