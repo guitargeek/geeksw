@@ -7,7 +7,7 @@ from geeksw.data_formats import Cutflow
 class Test(unittest.TestCase):
     def test_cutflow(self):
 
-        np.random.seed(41)
+        np.random.seed = 41
 
         x0 = np.random.uniform(size=(2, 1000))
         x1 = np.random.uniform(size=(2, 10000))
@@ -40,7 +40,7 @@ class Test(unittest.TestCase):
         import pickle
         import os
 
-        np.random.seed(41)
+        np.random.seed = 41
 
         a = np.random.uniform(size=1000)
 
