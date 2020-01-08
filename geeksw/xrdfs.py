@@ -39,7 +39,7 @@ def strip_root_path(path, root):
     return path[len(root) + 1 :]
 
 
-def ls(path, recursive=False):
+def ls(path, recursive=False, nostrip=False):
     """ If you put the path of a file, it will return None.
     """
     cmd = " ".join(["xrdfs", "polgrid4.in2p3.fr", "ls", "-u", "-R" * (recursive > 0), path])
@@ -50,6 +50,10 @@ def ls(path, recursive=False):
         return None
 
     files = out.split("\n")
+
+    if nostrip:
+        return files
+
     files = filter(lambda f: not f is None, map(strip_server, files))
     files = list(map(lambda f: strip_root_path(f, path), files))
     return files
