@@ -98,6 +98,7 @@ def cms_hist(
     style="mc",
     color=None,
     fill=True,
+    dashed=False,
     baseline_events=None,
     baseline_errors2=None,
     **kwargs
@@ -128,7 +129,10 @@ def cms_hist(
             y_low = 0.0 if baseline_events is None else to_y(baseline_events)
             fill_between(x, y_low, to_y(events), facecolor=color, edgecolor="k", linewidth=1.0, **kwargs)
         else:
-            plot(x, to_y(events), color="k" if fill else color, linewidth=2.0, **kwargs)
+            if dashed:
+                plot(x, to_y(events), color="k" if fill else color, linestyle='--', linewidth=2.0, **kwargs)
+            else:
+                plot(x, to_y(events), color="k" if fill else color, linewidth=2.0, **kwargs)
 
         if plot_uncertainty:
             fill_between(

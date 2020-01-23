@@ -50,6 +50,7 @@ class RectangularBinningModel(object):
         min_rel_signal_uncertainty=0.02,
         min_rel_background_uncertainty=0.08,
         snap_boxes_to_full_phasespace=True,
+        override_splitting_test=False,
     ):
         self.max_depth_ = max_depth
         self.min_samples_bin_ = min_samples_bin
@@ -57,6 +58,7 @@ class RectangularBinningModel(object):
         self.min_rel_signal_uncertainty_ = min_rel_signal_uncertainty
         self.min_rel_background_uncertainty_ = min_rel_background_uncertainty
         self.snap_boxes_to_full_phasespace_ = snap_boxes_to_full_phasespace
+        self.override_splitting_test_ = override_splitting_test
         self.snapped_ = False
 
     def fit(self, X, y, sample_weight=None):
@@ -90,6 +92,8 @@ class RectangularBinningModel(object):
             return s_uncert < self.min_rel_signal_uncertainty_ and b_uncert < self.min_rel_background_uncertainty_
 
         def is_worth_splitting(s_left, b_left, s_right, b_right):
+            if self.override_splitting_test_:
+                return True
             sob1 = 1.0 * s_left / b_left
             sob2 = 1.0 * s_right / b_right
             return max(sob1 / sob2, sob2 / sob1) > self.min_rel_s_over_b_improvement_
