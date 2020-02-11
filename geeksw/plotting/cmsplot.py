@@ -57,37 +57,39 @@ def ylabel(*args, **kwargs):
     return _ylabel(*args, **kwargs)
 
 
-def lumitext(s):
+def lumitext(s, log_scale=False):
     x0, x1 = xlim()
     y0, y1 = ylim()
-    return text(
-        x0 + (x1 - x0) * 1, y0 + (y1 - y0) * 1.025, s, fontweight="regular", horizontalalignment="right", fontsize=18
-    )
+    if log_scale:
+        log = np.log
+        y = np.exp(log(y0) + (log(y1) - log(y0)) * 1.025)
+    else:
+        y = y0 + (y1 - y0) * 1.025
+    return text(x0 + (x1 - x0) * 1, y, s, fontweight="regular", horizontalalignment="right", fontsize=18)
 
 
-def cmstext(s, loc=0):
+def cmstext(s, loc=0, log_scale=False):
     s1, *s2 = s.split(" ")
     s2 = " ".join(s2)
     x0, x1 = xlim()
     y0, y1 = ylim()
+
+    def ypos(y_rel):
+        if loc_scale:
+            log = np.log
+            return np.exp(log(y0) + (log(y1) - log(y0)) * y_rel)
+        else:
+            return y0 + (y1 - y0) * y_rel
+
     if loc == 0:
-        text(x0 + (x1 - x0) * 0.04, y0 + (y1 - y0) * 0.84, s2, style="italic", fontsize=16.5)
-        return text(x0 + (x1 - x0) * 0.04, y0 + (y1 - y0) * 0.92, s1, fontweight="bold", fontsize=22)
+        text(x0 + (x1 - x0) * 0.04, ypos(0.84), s2, style="italic", fontsize=16.5)
+        return text(x0 + (x1 - x0) * 0.04, ypos(0.92), s1, fontweight="bold", fontsize=22)
     if loc == 1:
-        text(
-            x1 - (x1 - x0) * 0.04, y0 + (y1 - y0) * 0.84, s2, style="italic", fontsize=16.5, horizontalalignment="right"
-        )
-        return text(
-            x1 - (x1 - x0) * 0.04,
-            y0 + (y1 - y0) * 0.92,
-            s1,
-            fontweight="bold",
-            fontsize=22,
-            horizontalalignment="right",
-        )
+        text(x1 - (x1 - x0) * 0.04, ypos(0.84), s2, style="italic", fontsize=16.5, horizontalalignment="right")
+        return text(x1 - (x1 - x0) * 0.04, ypos(0.92), s1, fontweight="bold", fontsize=22, horizontalalignment="right",)
     if loc == 2:
-        text(x0 + (x1 - x0) * 0.115, y0 + (y1 - y0) * 1.025, s2, style="italic", fontsize=16.5)
-        return text(x0 + (x1 - x0) * 0, y0 + (y1 - y0) * 1.025, s1, fontweight="bold", fontsize=22)
+        text(x0 + (x1 - x0) * 0.115, ypos(1.025), s2, style="italic", fontsize=16.5)
+        return text(x0 + (x1 - x0) * 0, ypos(1.025), s1, fontweight="bold", fontsize=22)
 
 
 def cms_hist(
@@ -163,12 +165,17 @@ set_xlabel = xlabel
 set_ylabel = ylabel
 
 
-def finalize(bins, xlabel=None, ylabel="Events", n_legend_cols=1):
-    xlim(bins[0], bins[-1])
-    ylim(0, ylim()[-1])
+def finalize(bins, log_scale=False, xlabel=None, ylabel="Events", n_legend_cols=1):
+    
+    if log_scale:
+        yscale("log", nonposy="clip")    
+    else:
+        ylim(0, ylim()[-1])
 
-    cmstext("CMS Simulation", loc=2)
-    lumitext("137 $fb^{-1}$ (13 TeV)")
+    xlim(bins[0], bins[-1])
+
+    cmstext("CMS Simulation", loc=2, log_scale=log_scale)
+    lumitext("137 $fb^{-1}$ (13 TeV)", log_scale=log_scale)
 
     if xlabel:
         set_xlabel(xlabel)
