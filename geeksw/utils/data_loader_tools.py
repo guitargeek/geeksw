@@ -70,11 +70,14 @@ def make_data_loader(
     return load_data
 
 
-def make_tree_loader(content, functions={}):
+def make_tree_loader(content, functions={}, entrystop=None):
     def is_available(tree, key):
         # Encode the branch names to binary strings because uproot gets them as binary strings unfortunately
         return key.encode("utf-8") in tree.keys()
 
     return make_data_loader(
-        content, functions=functions, get=lambda tree, branch: tree.array(branch), is_available=is_available
+        content,
+        functions=functions,
+        get=lambda tree, branch: tree.array(branch, entrystop=entrystop),
+        is_available=is_available,
     )

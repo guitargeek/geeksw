@@ -75,7 +75,7 @@ def cmstext(s, loc=0, log_scale=False):
     y0, y1 = ylim()
 
     def ypos(y_rel):
-        if loc_scale:
+        if log_scale:
             log = np.log
             return np.exp(log(y0) + (log(y1) - log(y0)) * y_rel)
         else:
@@ -103,8 +103,12 @@ def cms_hist(
     dashed=False,
     baseline_events=None,
     baseline_errors2=None,
+    overflow_bins=True,
     **kwargs
 ):
+    # Clip the values to bin boundaries to they are going into the overflow and underflow bin
+    if overflow_bins:
+        values = np.clip(values, bins[0], bins[-1])
 
     if not weights is None:
         counts = np.histogram(values, bins=bins)[0]
