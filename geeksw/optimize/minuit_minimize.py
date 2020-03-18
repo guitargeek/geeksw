@@ -2,6 +2,7 @@ from iminuit import Minuit
 from iminuit.util import make_func_code
 
 from collections import namedtuple
+import numpy as np
 
 MinuitResult = namedtuple("MinuitResult", ["values", "errors", "f_val"])
 
@@ -28,6 +29,19 @@ def minuit_minimize(func, param_names, starting_params, starting_errors, fixed_p
 
     assert len(param_names) == len(starting_params)
     assert len(param_names) == len(starting_errors)
+
+    all_parameters_fixed = True
+    for name in param_names:
+        if not name in fixed_params:
+            all_parameters_fixed = False
+
+    # If all parameters are fixed, we don't have to do any minimization
+    if all_parameters_fixed:
+        return MinuitResult(
+            {name: fixed_params[name] for name in param_names},
+            {name: np.nan for name in param_names},
+            func(**fixed_params),
+        )
 
     floating_param_names = []
     floating_starting_params = []
@@ -58,4 +72,21 @@ def minuit_minimize(func, param_names, starting_params, starting_errors, fixed_p
 
     values = minuit_instance.values
 
-    return MinuitResult(values, minuit_instance.errors, fcn(*values.values()))
+    # To get the final output, we get the values and errors either from the fit if ther parameters were floating, or
+    # from the fixed_params dictionary if the parameters were fixed
+
+    def get_fit_or_fixed_value(name):
+        if name in values:
+            return values[name]
+        return fixed_params[name]
+
+    def get_fit_or_fixed_error(name):
+        if name in minuit_instance.errors:
+            return minuit_instance.errors[name]
+        return np.nan
+
+    return MinuitResult(
+        {name: get_fit_or_fixed_value(name) for name in param_names},
+        {name: get_fit_or_fixed_error(name) for name in param_names},
+        fcn(*values.values()),
+    )
