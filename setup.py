@@ -16,11 +16,12 @@ setup(
     setup_requires=["pytest-runner"],
     tests_require=["pytest", "pandas", "sklearn", "scipy", "jupyter", "nbconvert"],
     install_requires=[
+        "awkward",
         "bayesian-optimization",
         "numpy",
         "matplotlib",
-        "awkward",
         "h5py",
+        "iminuit",
         "uproot",
         "uproot-methods",
         "lockfile",
