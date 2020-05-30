@@ -5,4 +5,5 @@ numpy
 pandas
 lockfile
 uproot
+scipy
 uproot - methods

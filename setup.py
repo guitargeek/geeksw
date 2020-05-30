@@ -25,6 +25,7 @@ setup(
         "uproot-methods",
         "lockfile",
         "tables",
+        "scipy",
         "tqdm",
     ],
 )
