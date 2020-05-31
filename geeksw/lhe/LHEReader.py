@@ -39,8 +39,12 @@ def get_event_data_frame(root):
             first_line = text.strip().split("\n")[0].strip()
             first_event_lines.append(first_line)
 
-    first_event_line_header = " ".join(list([str(x) for x in range(6)]))
-    text = first_event_line_header + "\n" + "\n".join(first_event_lines)
+    first_event_line_header = list([str(x) for x in range(6)])
+
+    if len(first_event_lines) == 0:
+        return pd.DataFrame(columns=first_event_line_header)
+
+    text = " ".join(first_event_line_header) + "\n" + "\n".join(first_event_lines)
     return pd.read_csv(StringIO(text), sep=" ", index_col=False)
 
 
@@ -70,6 +74,9 @@ def get_particle_data_frame(root):
         "spin",
     ]
 
+    if len(particle_table_lines) == 0:
+        return pd.DataFrame(columns=["event"] + event_table_header)
+
     text = " ".join(event_table_header) + "\n" + "\n".join(["\n".join(lines) for lines in particle_table_lines])
     df = pd.read_csv(StringIO(text), sep=" ", index_col=False)
 
@@ -98,6 +105,9 @@ def get_reweighting_data_frame(root):
                             weight_ids.append(wgt.attrib["id"])
                     for wgt in rwgt:
                         weights.append(float(wgt.text))
+
+    if len(weights) == 0:
+        return pd.DataFrame()
 
     weights = np.array(weights)
     n_weights = len(weight_ids)
@@ -169,9 +179,15 @@ def read_lhe_file(file_handle, batch_size=1000, maxevents=None):
                 batch_starts.append(len(data))
             i_event += 1
 
+    if not batch_starts[-1] == len(data) - 1:
+        batch_starts.append(len(data) - 1)
+
     print_log("Reading header XML from binary string")
     joined_data_header = b"".join(data_header)
     root_header = ET.fromstring(joined_data_header)
+
+    if len(data) == 1:
+        return root_header, []
 
     if not do_batching:
         print_log("Joining binary data")
