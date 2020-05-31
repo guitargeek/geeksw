@@ -4,6 +4,7 @@ from io import StringIO
 import xml.etree.ElementTree as ET
 import awkward
 import numpy as np
+import tqdm
 
 import datetime
 
@@ -30,15 +31,34 @@ def reduce_duplicate_whitespace(text):
     return text
 
 
-def get_event_data_frame(root):
-    first_event_lines = []
+def iterate_over_events(root, progressbar=False):
+    event_lines = []
+    weight_ids = []
+    weights = []
 
+    tqdm_progressbar = tqdm.tqdm(
+        total=len(root), disable=not progressbar, desc="Iterating over LHE events", unit=" events"
+    )
     for child in root:
         if child.tag == "event":
             text = reduce_duplicate_whitespace(child.text)
-            first_line = text.strip().split("\n")[0].strip()
-            first_event_lines.append(first_line)
+            event_lines.append(text.strip().split("\n"))
 
+            for rwgt in child:
+                if rwgt.tag == "rwgt":
+                    if weight_ids == []:
+                        for wgt in rwgt:
+                            weight_ids.append(wgt.attrib["id"])
+                    for wgt in rwgt:
+                        weights.append(float(wgt.text))
+        tqdm_progressbar.update()
+    tqdm_progressbar.close()
+
+    return event_lines, weight_ids, weights
+
+
+def get_event_data_frame(event_lines):
+    first_event_lines = [lines[0].strip() for lines in event_lines]
     first_event_line_header = list([str(x) for x in range(6)])
 
     if len(first_event_lines) == 0:
@@ -48,15 +68,11 @@ def get_event_data_frame(root):
     return pd.read_csv(StringIO(text), sep=" ", index_col=False)
 
 
-def get_particle_data_frame(root):
+def get_particle_data_frame(event_lines):
     particle_table_lines = []
 
-    for child in root:
-        if child.tag == "event":
-            text = reduce_duplicate_whitespace(child.text)
-            lines = text.strip().split("\n")
-            text = [l.strip() for l in lines[1:]]
-            particle_table_lines.append(text)
+    for lines in event_lines:
+        particle_table_lines.append([l.strip() for l in lines[1:]])
 
     event_table_header = [
         "pdgid",
@@ -92,19 +108,7 @@ def get_particle_data_frame(root):
     return df
 
 
-def get_reweighting_data_frame(root):
-    weight_ids = []
-    weights = []
-
-    for event in root:
-        if event.tag == "event":
-            for rwgt in event:
-                if rwgt.tag == "rwgt":
-                    if weight_ids == []:
-                        for wgt in rwgt:
-                            weight_ids.append(wgt.attrib["id"])
-                    for wgt in rwgt:
-                        weights.append(float(wgt.text))
+def get_reweighting_data_frame(weight_ids, weights):
 
     if len(weights) == 0:
         return pd.DataFrame()
@@ -137,14 +141,18 @@ class NestedListIterator(object):
 
 
 class NestedList(object):
-    def __init__(self, nested_list):
+    def __init__(self, nested_list, size):
         self.nested_list_ = nested_list
+        self.size_ = size
+
+    def __len__(self):
+        return self.size_
 
     def __iter__(self):
         return NestedListIterator(self.nested_list_)
 
 
-def read_lhe_file(file_handle, batch_size=1000, maxevents=None):
+def read_lhe_file(file_handle, batch_size=1000, maxevents=None, progressbar=True):
 
     header_read = False
     data_header = []
@@ -154,11 +162,27 @@ def read_lhe_file(file_handle, batch_size=1000, maxevents=None):
     batch_starts = [1]
     i_event = 0
 
+    # Will be autodetected from the LHE file
+    n_events = None
+    tqdm_progressbar = None
+
     print_log("Looping over lines in file")
 
     for line in file_handle:
 
         if not header_read:
+
+            # This should work with LHE files from madgraph
+            if b"nevents" in line and n_events is None:
+                n_events = int(line.strip().split(b" ")[0])
+                if not maxevents is None and maxevents >= 0:
+                    n_events = min(n_events, maxevents)
+
+                # Now we have the knowledge to make a progressbar!
+                tqdm_progressbar = tqdm.tqdm(
+                    total=n_events, disable=not progressbar, desc="Copying LHE file into memory", unit=" events"
+                )
+
             # Read the part of the XML that doesn't belong to the list of events
             if b"<event>" in line:
                 header_read = True
@@ -178,6 +202,12 @@ def read_lhe_file(file_handle, batch_size=1000, maxevents=None):
             if do_batching and (i_event + 1) % batch_size == 0:
                 batch_starts.append(len(data))
             i_event += 1
+
+            if not tqdm_progressbar is None:
+                tqdm_progressbar.update()
+
+    if not tqdm_progressbar is None:
+        tqdm_progressbar.close()
 
     if not batch_starts[-1] == len(data) - 1:
         batch_starts.append(len(data) - 1)
@@ -203,32 +233,53 @@ def read_lhe_file(file_handle, batch_size=1000, maxevents=None):
             joined_data = b"".join([b"<LesHouchesEvents>"] + data[a:b] + [b"</LesHouchesEvents>"])
             root_events_list.append(joined_data)
 
-        root_events = NestedList(root_events_list)
+        root_events = NestedList(root_events_list, i_event)
 
     return root_header, root_events
 
 
 class LHEReader(object):
-    def __init__(self, lhe_filepath, maxevents=None, batch_size=100):
+    def __init__(self, lhe_filepath, maxevents=None, batch_size=100, progressbar=True):
 
         print_log(f"Opening LHE file {lhe_filepath}")
 
         if lhe_filepath.endswith(".lhe.gz"):
             with gzip.open(lhe_filepath, "r") as f:
-                _, self.event_root_ = read_lhe_file(f, maxevents=maxevents, batch_size=batch_size)
+                _, self.event_root_ = read_lhe_file(
+                    f, maxevents=maxevents, batch_size=batch_size, progressbar=progressbar
+                )
         elif lhe_filepath.endswith(".lhe"):
             with open(lhe_filepath, "rb") as f:
-                _, self.event_root_ = read_lhe_file(f, maxevents=maxevents, batch_size=batch_size)
+                _, self.event_root_ = read_lhe_file(
+                    f, maxevents=maxevents, batch_size=batch_size, progressbar=progressbar
+                )
         else:
             raise RuntimeError(f"File {lhe_filepath} not recognized as LHE file. It should end with .lhe or .lhz.gz")
 
         print_log("Reading file into XML data structures done")
 
+        self.progressbar_ = progressbar
+
+        # This will get computed once you do the first computation which requires it
+        self.event_lines_ = None
+        self.weight_ids_ = None
+        self.weights_ = None
+
+    def _iterate_over_events(self):
+        if not self.event_lines_ is None:
+            return
+        self.event_lines_, self.weight_ids_, self.weights_ = iterate_over_events(
+            self.event_root_, progressbar=self.progressbar_
+        )
+
     def event_data_frame(self):
-        return get_event_data_frame(self.event_root_)
+        self._iterate_over_events()
+        return get_event_data_frame(self.event_lines_)
 
     def particle_data_frame(self):
-        return get_particle_data_frame(self.event_root_)
+        self._iterate_over_events()
+        return get_particle_data_frame(self.event_lines_)
 
     def reweighting_data_frame(self):
-        return get_reweighting_data_frame(self.event_root_)
+        self._iterate_over_events()
+        return get_reweighting_data_frame(self.weight_ids_, self.weights_)

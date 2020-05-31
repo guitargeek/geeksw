@@ -15,7 +15,7 @@ n_particles_per_event = 11  # We know this from how the data was generated and c
 
 class TestLHE(unittest.TestCase):
     def _test_lhe_simple(self, data, maxevents, batch_size=None):
-        lhe_reader = LHEReader(data, maxevents=maxevents, batch_size=batch_size)
+        lhe_reader = LHEReader(data, maxevents=maxevents, batch_size=batch_size, progressbar=False)
 
         particles = lhe_reader.particle_data_frame()
         event_data = lhe_reader.event_data_frame()
