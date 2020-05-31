@@ -10,6 +10,7 @@ from collections import namedtuple
 
 from geeksw.optimize.minuit_minimize import minuit_minimize
 
+
 def _get_nuisance_parameter_name(func):
     if hasattr(func, "nuisance_parameter_name"):
         return func.nuisance_parameter_name

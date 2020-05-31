@@ -13,6 +13,8 @@ def format_errors_in_df(df, error_column_suffix="_err", plus_minus="±"):
     for col in df:
         col_err = col + error_column_suffix
         if col_err in df:
-            df[col] = list(map(lambda x: represent_value_and_uncert(*x, plus_minus=plus_minus), zip(df[col], df[col_err])))
+            df[col] = list(
+                map(lambda x: represent_value_and_uncert(*x, plus_minus=plus_minus), zip(df[col], df[col_err]))
+            )
             df = df.drop(col_err, axis=1)
     return df

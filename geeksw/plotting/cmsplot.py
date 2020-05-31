@@ -136,7 +136,7 @@ def cms_hist(
             fill_between(x, y_low, to_y(events), facecolor=color, edgecolor="k", linewidth=1.0, **kwargs)
         else:
             if dashed:
-                plot(x, to_y(events), color="k" if fill else color, linestyle='--', linewidth=2.0, **kwargs)
+                plot(x, to_y(events), color="k" if fill else color, linestyle="--", linewidth=2.0, **kwargs)
             else:
                 plot(x, to_y(events), color="k" if fill else color, linewidth=2.0, **kwargs)
 
@@ -170,9 +170,9 @@ set_ylabel = ylabel
 
 
 def finalize(bins, log_scale=False, xlabel=None, ylabel="Events", n_legend_cols=1):
-    
+
     if log_scale:
-        yscale("log", nonposy="clip")    
+        yscale("log", nonposy="clip")
     else:
         ylim(0, ylim()[-1])
 

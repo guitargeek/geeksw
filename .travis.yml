@@ -20,4 +20,7 @@ addons:
 
 script:
   - pip install torch
+  - cd tests
+  - sh download_test_data.sh
+  - cd ..
   - python setup.py pytest

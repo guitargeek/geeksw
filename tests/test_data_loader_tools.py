@@ -9,16 +9,16 @@ class Test(unittest.TestCase):
     def test_data_loader_tools(self):
 
         data = {
-                "a" : np.array([1, 2, 3]),
-                "b" : np.array([2, 3, 4]),
-                "c" : np.array([5, 6, 7]),
-            }
+            "a": np.array([1, 2, 3]),
+            "b": np.array([2, 3, 4]),
+            "c": np.array([5, 6, 7]),
+        }
 
         funcs = {
-                "d" : lambda df : df["a"] + df["b"],
-                "e" : lambda df : df.eval("b * c"),
-                "f" : lambda df : df.eval("d - e"),
-            }
+            "d": lambda df: df["a"] + df["b"],
+            "e": lambda df: df.eval("b * c"),
+            "f": lambda df: df.eval("d - e"),
+        }
 
         # Test if we can load columns directly in the data
         load_df = make_data_loader(["a", "b", "c"])
@@ -40,6 +40,7 @@ class Test(unittest.TestCase):
         load_df = make_data_loader(["f"], functions=funcs)
         df = load_df(data)
         np.testing.assert_equal(df["f"], data["a"] + data["b"] - data["b"] * data["c"])
+
 
 if __name__ == "__main__":
 
