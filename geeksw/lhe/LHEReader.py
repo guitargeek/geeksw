@@ -7,6 +7,7 @@ import numpy as np
 
 
 def reduce_duplicate_whitespace(text):
+    text = text.replace("\n\n", "\n")
     text = text.replace("  ", " ")
     if "  " in text:
         return reduce_duplicate_whitespace(text)
@@ -88,14 +89,29 @@ def get_reweighting_data_frame(root):
     return pd.DataFrame(weights.reshape((-1, n_weights)), columns=weight_ids)
 
 
+def read_lhe_file(file_handle, maxevents=None):
+    data = []
+    i_event = 0
+    for line in file_handle:
+        if not maxevents is None and i_event == maxevents:
+            data.append(b"</LesHouchesEvents>")
+            break
+        data.append(line)
+        if b"</event>" in line:
+            if i_event % 1000 == 0:
+                print("Reading event:", i_event)
+            i_event += 1
+    return ET.fromstring(b"\n".join(data))
+
+
 class LHEReader(object):
-    def __init__(self, lhe_filepath):
+    def __init__(self, lhe_filepath, maxevents=None):
         if lhe_filepath.endswith(".lhe.gz"):
             with gzip.open(lhe_filepath, "r") as f:
-                self.root_ = ET.fromstring(f.read())
+                self.root_ = read_lhe_file(f, maxevents=maxevents)
         elif lhe_filepath.endswith(".lhe"):
             with open(lhe_filepath, "r") as f:
-                self.root_ = ET.fromstring(f.read())
+                self.root_ = read_lhe_file(f, maxevents=maxevents)
         else:
             raise RuntimeError(f"File {lhe_filepath} not recognized as LHE file. It should end with .lhe or .lhz.gz")
 
