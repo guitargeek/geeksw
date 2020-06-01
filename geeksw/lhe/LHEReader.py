@@ -164,6 +164,7 @@ def read_lhe_file(file_handle, batch_size=1000, maxevents=None, progressbar=True
 
     # Will be autodetected from the LHE file
     n_events = None
+    cross_section = None
     tqdm_progressbar = None
 
     print_log("Looping over lines in file")
@@ -182,6 +183,10 @@ def read_lhe_file(file_handle, batch_size=1000, maxevents=None, progressbar=True
                 tqdm_progressbar = tqdm.tqdm(
                     total=n_events, disable=not progressbar, desc="Copying LHE file into memory", unit=" events"
                 )
+
+            if b"Integrated weight" in line:
+                cross_section = float(line.split(b" ")[-1])
+
 
             # Read the part of the XML that doesn't belong to the list of events
             if b"<event>" in line:
@@ -235,7 +240,7 @@ def read_lhe_file(file_handle, batch_size=1000, maxevents=None, progressbar=True
 
         root_events = NestedList(root_events_list, i_event)
 
-    return root_header, root_events
+    return root_header, root_events, cross_section
 
 
 class LHEReader(object):
@@ -245,12 +250,12 @@ class LHEReader(object):
 
         if lhe_filepath.endswith(".lhe.gz"):
             with gzip.open(lhe_filepath, "r") as f:
-                _, self.event_root_ = read_lhe_file(
+                self.header_root_, self.event_root_, self.cross_section_ = read_lhe_file(
                     f, maxevents=maxevents, batch_size=batch_size, progressbar=progressbar
                 )
         elif lhe_filepath.endswith(".lhe"):
             with open(lhe_filepath, "rb") as f:
-                _, self.event_root_ = read_lhe_file(
+                self.header_root_, self.event_root_ , self.cross_section_ = read_lhe_file(
                     f, maxevents=maxevents, batch_size=batch_size, progressbar=progressbar
                 )
         else:
@@ -264,6 +269,11 @@ class LHEReader(object):
         self.event_lines_ = None
         self.weight_ids_ = None
         self.weights_ = None
+
+    def cross_section(self):
+        """Return cross section in pb.
+        """
+        return self.cross_section_
 
     def _iterate_over_events(self):
         if not self.event_lines_ is None:
