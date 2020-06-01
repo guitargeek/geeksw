@@ -187,7 +187,6 @@ def read_lhe_file(file_handle, batch_size=1000, maxevents=None, progressbar=True
             if b"Integrated weight" in line:
                 cross_section = float(line.split(b" ")[-1])
 
-
             # Read the part of the XML that doesn't belong to the list of events
             if b"<event>" in line:
                 header_read = True
@@ -222,7 +221,7 @@ def read_lhe_file(file_handle, batch_size=1000, maxevents=None, progressbar=True
     root_header = ET.fromstring(joined_data_header)
 
     if len(data) == 1:
-        return root_header, []
+        return root_header, [], None
 
     if not do_batching:
         print_log("Joining binary data")
@@ -255,7 +254,7 @@ class LHEReader(object):
                 )
         elif lhe_filepath.endswith(".lhe"):
             with open(lhe_filepath, "rb") as f:
-                self.header_root_, self.event_root_ , self.cross_section_ = read_lhe_file(
+                self.header_root_, self.event_root_, self.cross_section_ = read_lhe_file(
                     f, maxevents=maxevents, batch_size=batch_size, progressbar=progressbar
                 )
         else:
