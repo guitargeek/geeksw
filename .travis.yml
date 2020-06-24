@@ -1,12 +1,11 @@
+dist: bionic
 language: python
-dist: xenial
 
 os:
   - linux
 
-python:
-  - 3.7
-
+#python:
+  #- 3.7
 
 addons:
   apt:
@@ -17,10 +16,14 @@ addons:
       - python-pygments
       - python3-pygments
       - nodejs
+      - python3-pip
+      - python3-setuptools
+      - python3-pandas
+      - python3-numpy
 
 script:
-  - pip install torch
+  - pip3 install torch
   - cd tests
   - sh download_test_data.sh
   - cd ..
-  - python setup.py pytest
+  - python3 setup.py pytest

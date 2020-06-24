@@ -25,8 +25,8 @@ def count_leptons_from_weak_boson_decays(nano_file):
 class Test(unittest.TestCase):
     def test_genpart_1(self):
 
-        assert count_leptons_from_weak_boson_decays("nano_data/wwz_single_lepton_filter.root").min() == 1
-        assert count_leptons_from_weak_boson_decays("nano_data/wwz_double_lepton_filter.root").min() == 2
+        assert count_leptons_from_weak_boson_decays("tests/nano_data/wwz_single_lepton_filter.root").min() == 1
+        assert count_leptons_from_weak_boson_decays("tests/nano_data/wwz_double_lepton_filter.root").min() == 2
 
 
 if __name__ == "__main__":
