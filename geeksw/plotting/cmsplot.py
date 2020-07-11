@@ -86,7 +86,7 @@ def cmstext(s, loc=0, log_scale=False):
         return text(x0 + (x1 - x0) * 0.04, ypos(0.92), s1, fontweight="bold", fontsize=22)
     if loc == 1:
         text(x1 - (x1 - x0) * 0.04, ypos(0.84), s2, style="italic", fontsize=16.5, horizontalalignment="right")
-        return text(x1 - (x1 - x0) * 0.04, ypos(0.92), s1, fontweight="bold", fontsize=22, horizontalalignment="right",)
+        return text(x1 - (x1 - x0) * 0.04, ypos(0.92), s1, fontweight="bold", fontsize=22, horizontalalignment="right")
     if loc == 2:
         text(x0 + (x1 - x0) * 0.115, ypos(1.025), s2, style="italic", fontsize=16.5)
         return text(x0 + (x1 - x0) * 0, ypos(1.025), s1, fontweight="bold", fontsize=22)

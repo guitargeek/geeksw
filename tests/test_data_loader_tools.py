@@ -8,17 +8,9 @@ from geeksw.utils.data_loader_tools import make_data_loader
 class Test(unittest.TestCase):
     def test_data_loader_tools(self):
 
-        data = {
-            "a": np.array([1, 2, 3]),
-            "b": np.array([2, 3, 4]),
-            "c": np.array([5, 6, 7]),
-        }
+        data = {"a": np.array([1, 2, 3]), "b": np.array([2, 3, 4]), "c": np.array([5, 6, 7])}
 
-        funcs = {
-            "d": lambda df: df["a"] + df["b"],
-            "e": lambda df: df.eval("b * c"),
-            "f": lambda df: df.eval("d - e"),
-        }
+        funcs = {"d": lambda df: df["a"] + df["b"], "e": lambda df: df.eval("b * c"), "f": lambda df: df.eval("d - e")}
 
         # Test if we can load columns directly in the data
         load_df = make_data_loader(["a", "b", "c"])
