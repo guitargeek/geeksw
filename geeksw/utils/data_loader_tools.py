@@ -1,14 +1,17 @@
 import datetime
+import os
 
 
 def print_with_time(*args, **kwargs):
     time_string = datetime.datetime.now()
     print(f"[{time_string}]", *args, **kwargs)
 
+def print_nothing(*args, **kwargs):
+    return None
 
 def make_data_loader(content, producers={}, verbosity=0):
 
-    print_log = lambda x: None
+    print_log = print_nothing
     if verbosity >= 2:
         print_log = print_with_time
 
@@ -102,3 +105,14 @@ class TreeWrapper(object):
 
     def __contains__(self, key):
         return key.encode("utf-8") in self.tree_.keys()
+
+
+def list_root_files_recursively(path):
+    out = []
+
+    for root, dirs, files in os.walk(path):
+        for name in files:
+            if name.lower().endswith(".root"):
+                out.append(os.path.join(root, name))
+
+    return out
