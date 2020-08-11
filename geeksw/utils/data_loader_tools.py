@@ -1,15 +1,19 @@
 import datetime
 import os
 
+import numpy
+
 
 def print_with_time(*args, **kwargs):
     time_string = datetime.datetime.now()
     print(f"[{time_string}]", *args, **kwargs)
 
+
 def print_nothing(*args, **kwargs):
     return None
 
-def make_data_loader(content, producers={}, verbosity=0):
+
+def make_data_loader(content, producers={}, cleanup=True, verbosity=0):
 
     print_log = print_nothing
     if verbosity >= 2:
@@ -81,9 +85,10 @@ def make_data_loader(content, producers={}, verbosity=0):
             if not key in content:
                 to_delete.append(key)
 
-        for key in to_delete:
-            del data[key]
-            print_log(key, "deleted")
+        if cleanup:
+            for key in to_delete:
+                del data[key]
+                print_log(key, "deleted")
 
         return data
 
@@ -91,20 +96,39 @@ def make_data_loader(content, producers={}, verbosity=0):
 
 
 class TreeWrapper(object):
-    def __init__(self, tree, n_max_events=None):
+    def __init__(self, tree, n_max_events=None, extendable=False):
         self.tree_ = tree
         self.n_max_events_ = n_max_events
         # self.cache_ = mycache = uproot.ArrayCache("100 MB")
         self.cache_ = {}
 
+        self.extendable_ = extendable
+        self.extensions_ = dict()
+
     def __getitem__(self, key):
+        if key in self.extensions_:
+            return self.extensions_[key]
         return self.tree_.array(key, entrystop=self.n_max_events_, cache=self.cache_)
+
+    def __setitem__(self, key, value):
+        if not self.extendable_:
+            raise RuntimeError("TreeWrapper can't be extended with new information.")
+        if key.encode("utf-8") in self.tree_.keys():
+            raise RuntimeError("Extension column can't have name of a column already in the Tree!")
+        # Try broadcasting if value has no length
+        if not hasattr(value, "__len__"):
+            self.extensions_[key] = numpy.zeros(len(self), dtype=type(value)) + value
+            return
+        if not len(value) == len(self):
+            raise RuntimeError("Can't extend tree wrapper with column of other length than the tree!")
+        self.extensions_[key] = value
 
     def __len__(self):
         return min(len(self.tree_), self.n_max_events_)
 
     def __contains__(self, key):
-        return key.encode("utf-8") in self.tree_.keys()
+        is_in_tree = key.encode("utf-8") in self.tree_.keys()
+        return is_in_tree or self.extensions_
 
 
 def list_root_files_recursively(path):
