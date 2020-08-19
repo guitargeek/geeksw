@@ -175,7 +175,7 @@ def read_lhe_file(file_handle, batch_size=1000, maxevents=None, progressbar=True
 
             # This should work with LHE files from madgraph
             if b"nevents" in line and n_events is None:
-                line = line.replace("\t", " ")
+                line = line.replace(b"\t", b" ")
                 n_events = int(line.strip().split(b" ")[0])
                 if not maxevents is None and maxevents >= 0:
                     n_events = min(n_events, maxevents)
