@@ -20,6 +20,7 @@ addons:
       - python3-setuptools
       - python3-pandas
       - python3-numpy
+      - python3-scipy
 
 script:
   - pip3 install torch
