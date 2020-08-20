@@ -34,7 +34,7 @@ class ScratchCache(object):
         if not key in self:
             raise KeyError(key + "not found in scratch cache.")
 
-        with h5py.File(file_name) as hf:
+        with h5py.File(file_name, "r") as hf:
             ah5 = awkward.hdf5(hf)
             array = ah5[key]
 

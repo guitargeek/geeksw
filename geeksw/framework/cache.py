@@ -92,7 +92,7 @@ def _get_from_cache(filename):
     # For TLorentsVectorArray from ptetaphimass
     if "JaggedArrayMethods_PtEtaPhiMassLorentzVectorArray_Table" in basename:
         content = OrderedDict()
-        with h5py.File(filename) as hf:
+        with h5py.File(filename, "r") as hf:
             ah5 = awkward.hdf5(hf)
             for k in ah5:
                 content[k] = ah5[k]
@@ -105,7 +105,7 @@ def _get_from_cache(filename):
         return particles
 
     if "__ndarray" in basename or "__JaggedArray" in basename:
-        with h5py.File(filename) as hf:
+        with h5py.File(filename, "r") as hf:
             ah5 = awkward.hdf5(hf)
             array = ah5["data"]
         return array
