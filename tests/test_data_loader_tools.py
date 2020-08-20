@@ -10,7 +10,11 @@ class Test(unittest.TestCase):
 
         data = {"a": np.array([1, 2, 3]), "b": np.array([2, 3, 4]), "c": np.array([5, 6, 7])}
 
-        funcs = {"d": lambda df: df["a"] + df["b"], "e": lambda df: df.eval("b * c"), "f": lambda df: df.eval("d - e")}
+        funcs = {
+            "d": lambda df: df["a"] + df["b"],
+            "e": lambda df: df["b"] * df["c"],
+            "f": lambda df: df["d"] - df["e"],
+        }
 
         # Test if we can load columns directly in the data
         load_df = make_data_loader(["a", "b", "c"])
@@ -20,7 +24,7 @@ class Test(unittest.TestCase):
         np.testing.assert_equal(df["c"], data["c"])
 
         # Test if we can get columns which are directly derived from the available columns
-        load_df = make_data_loader(["a", "b", "c", "d", "e"], functions=funcs)
+        load_df = make_data_loader(["a", "b", "c", "d", "e"], producers=funcs)
         df = load_df(data)
         np.testing.assert_equal(df["a"], data["a"])
         np.testing.assert_equal(df["b"], data["b"])
@@ -29,7 +33,7 @@ class Test(unittest.TestCase):
         np.testing.assert_equal(df["e"], data["b"] * data["c"])
 
         # Test if we can load columns which are "second-order derived" without loading anything else
-        load_df = make_data_loader(["f"], functions=funcs)
+        load_df = make_data_loader(["f"], producers=funcs)
         df = load_df(data)
         np.testing.assert_equal(df["f"], data["a"] + data["b"] - data["b"] * data["c"])
 

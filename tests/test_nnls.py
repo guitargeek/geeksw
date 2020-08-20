@@ -4,7 +4,7 @@ import numpy as np
 
 class Test(unittest.TestCase):
     def test_nnls(self):
-        import scipy.optimize.nnls
+        import scipy.optimize
         from sklearn.datasets import make_regression
         import geeksw.optimize.nnls
 
