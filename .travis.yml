@@ -23,6 +23,7 @@ addons:
       - python3-scipy
 
 script:
+  - pip3 install xgboost
   - pip3 install torch
   - cd tests
   - sh download_test_data.sh
